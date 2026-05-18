@@ -53,7 +53,7 @@ out/
 *.tsbuildinfo
 tsconfig.tsbuildinfo
 dist/
-lib/
+# Note: do NOT add `lib/` here — src/lib/ directories are source code, not build output
 *.d.ts.map
 *.js.map
 
