@@ -1,0 +1,181 @@
+# ════════════════════════════════════════════════════════════════════════════
+#  Plug n' Play Arena — Root .gitignore
+#  Covers: Next.js, Node, TypeScript, Drizzle, Vercel, OS, Editors
+# ════════════════════════════════════════════════════════════════════════════
+
+# ─── Node / npm / yarn / pnpm ────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnpm-store/
+.npm/
+
+# ─── SECRETS & ENVIRONMENT — NEVER COMMIT ────────────────────────────────────
+# Contains DATABASE_URL, NEXTAUTH_SECRET, PUSHER keys, FUJI_MINTER_PRIVATE_KEY,
+# LUMA_API_KEY, and any other credentials. These must ONLY live in Vercel dashboard.
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.staging
+.env.staging.local
+.env.*.local
+
+# Private keys / certificates
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
+*.crt
+id_rsa
+id_ed25519
+*.secret
+
+# ─── Next.js build outputs ───────────────────────────────────────────────────
+.next/
+out/
+.next-cache/
+# Static export
+/build
+
+# ─── TypeScript ──────────────────────────────────────────────────────────────
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+dist/
+lib/
+*.d.ts.map
+*.js.map
+
+# ─── Drizzle ORM ─────────────────────────────────────────────────────────────
+# Keep: drizzle/ migration SQL files (version-controlled schema history)
+# Ignore: meta snapshots (auto-generated, large, not useful in PRs)
+drizzle/meta/
+**/migrations/meta/
+# Studio local state
+.drizzle/
+
+# ─── Vercel ──────────────────────────────────────────────────────────────────
+.vercel/
+.vercel-output/
+
+# ─── Testing & coverage ──────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+junit.xml
+test-results/
+playwright-report/
+playwright/.cache/
+.vitest/
+__snapshots__/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ─── Cache directories ───────────────────────────────────────────────────────
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+.stylelintcache
+.prettiercache
+
+# ─── macOS ───────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+.AppleDouble
+.LSOverride
+Icon
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ─── Windows ─────────────────────────────────────────────────────────────────
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump
+
+# ─── Linux ───────────────────────────────────────────────────────────────────
+*~
+.directory
+.Trash-*/
+.nfs*
+
+# ─── JetBrains IDEs (IntelliJ, WebStorm, GoLand, etc.) ──────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.idea_modules/
+atlassian-ide-plugin.xml
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+
+# ─── VS Code ─────────────────────────────────────────────────────────────────
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+# Do NOT ignore settings.json if it contains workspace-shared config:
+# !.vscode/settings.json
+
+# ─── Vim / Emacs ─────────────────────────────────────────────────────────────
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
+*.orig
+
+# ─── Miscellaneous ───────────────────────────────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+Dockerfile.local
+docker-compose.local.yml
+*.sock
+
+# ─── Runtime data ────────────────────────────────────────────────────────────
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ─── Optional: exclude seed SQL files if they ever contain sensitive data ─────
+# The seed files in this repo are safe (no secrets), so they're committed.
+# Uncomment below if that ever changes:
+# web/src/lib/db/seed*.sql

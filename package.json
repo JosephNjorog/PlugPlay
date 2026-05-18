@@ -1,0 +1,16 @@
+{
+  "name": "plug-play-arena",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["web", "super-admin"],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=web",
+    "dev:super": "npm run dev --workspace=super-admin",
+    "build:web": "npm run build --workspace=web",
+    "build:super": "npm run build --workspace=super-admin",
+    "build": "npm run build:web && npm run build:super",
+    "db:push": "npm run db:push --workspace=web",
+    "db:studio": "npm run db:studio --workspace=web",
+    "db:generate": "npm run db:generate --workspace=web"
+  }
+}
