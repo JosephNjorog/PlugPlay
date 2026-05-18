@@ -1,0 +1,18 @@
+# Web app — local overrides (root .gitignore handles most patterns)
+
+# Next.js
+.next/
+out/
+
+# Environment (CRITICAL — contains DATABASE_URL and API keys)
+.env.local
+.env*.local
+
+# Drizzle generated snapshots (keep migration SQL files, skip meta)
+src/lib/db/migrations/meta/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# Vercel CLI
+.vercel/
