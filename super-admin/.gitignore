@@ -1,0 +1,15 @@
+# Super-admin app — local overrides (root .gitignore handles most patterns)
+
+# Next.js
+.next/
+out/
+
+# Environment (CRITICAL — contains DATABASE_URL and FUJI_MINTER_PRIVATE_KEY)
+.env.local
+.env*.local
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# Vercel CLI
+.vercel/
