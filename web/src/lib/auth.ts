@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { db, profiles } from "@/lib/db";
 import { z } from "zod";
+import { authConfig } from "./auth.config";
 
 const signInSchema = z.object({
   email: z.string().email(),
@@ -11,6 +12,7 @@ const signInSchema = z.object({
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -48,6 +50,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -58,24 +61,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        (session.user as any).isAdmin = token.isAdmin;
-        (session.user as any).isSuperAdmin = token.isSuperAdmin;
-        (session.user as any).persona = token.persona;
-        (session.user as any).onboardingDone = token.onboardingDone;
-      }
-      return session;
-    },
   },
-  pages: {
-    signIn: "/sign-in",
-    error: "/sign-in",
-  },
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  },
-  secret: process.env.NEXTAUTH_SECRET,
 });
