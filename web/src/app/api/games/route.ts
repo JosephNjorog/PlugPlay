@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       .from(missionAttempts)
       .where(
         and(
-          eq(missionAttempts.playerId, session.user.id),
+          eq(missionAttempts.userId, session.user.id),
           eq(missionAttempts.status, "completed")
         )
       );
