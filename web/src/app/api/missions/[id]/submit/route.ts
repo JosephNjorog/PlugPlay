@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .from(missionAttempts)
     .where(
       and(
-        eq(missionAttempts.playerId, session.user.id),
+        eq(missionAttempts.userId, session.user.id),
         eq(missionAttempts.gameId, gameId)
       )
     );
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const [attempt] = await db
     .insert(missionAttempts)
     .values({
-      playerId: session.user.id,
+      userId: session.user.id,
       gameId,
       eventId: body.eventId,
       status: "completed",
