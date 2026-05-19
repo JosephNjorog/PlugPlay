@@ -35,7 +35,7 @@ export async function GET() {
   const recentAttempts = await db
     .select({
       id: missionAttempts.id,
-      playerId: missionAttempts.playerId,
+      userId: missionAttempts.userId,
       gameId: missionAttempts.gameId,
       score: missionAttempts.score,
       status: missionAttempts.status,
@@ -45,7 +45,7 @@ export async function GET() {
       gameTitle: games.title,
     })
     .from(missionAttempts)
-    .leftJoin(profiles, eq(missionAttempts.playerId, profiles.id))
+    .leftJoin(profiles, eq(missionAttempts.userId, profiles.userId))
     .leftJoin(games, eq(missionAttempts.gameId, games.id))
     .orderBy(sql`${missionAttempts.completedAt} desc`)
     .limit(10);
