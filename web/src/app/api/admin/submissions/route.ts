@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       gameCategory: games.category,
     })
     .from(missionAttempts)
-    .leftJoin(profiles, eq(missionAttempts.playerId, profiles.id))
+    .leftJoin(profiles, eq(missionAttempts.userId, profiles.userId))
     .leftJoin(games, eq(missionAttempts.gameId, games.id))
     .where(eq(missionAttempts.status, status))
     .orderBy(desc(missionAttempts.createdAt))
