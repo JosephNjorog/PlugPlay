@@ -1,8 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { db, profiles } from "@/lib/db";
+import { db } from "@/lib/db";
+import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { authConfig } from "./auth.config";
 
@@ -26,25 +26,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const { email, password } = parsed.data;
 
-        const [user] = await db
-          .select()
-          .from(profiles)
-          .where(eq(profiles.email, email.toLowerCase()))
-          .limit(1);
+        // Query users (auth) joined with profiles (app data)
+        const rows = await db.execute(sql`
+          SELECT u.id          AS user_id,
+                 u.email,
+                 u.password_hash,
+                 p.id          AS profile_id,
+                 p.username,
+                 p.emoji,
+                 p.is_admin,
+                 p.is_super_admin,
+                 p.onboarding_done,
+                 p.persona
+          FROM   users u
+          JOIN   profiles p ON p.user_id = u.id
+          WHERE  u.email = ${email.toLowerCase()}
+          LIMIT  1
+        `);
 
+        const user = (rows as any).rows?.[0] ?? (rows as any)[0];
         if (!user) return null;
 
-        const validPassword = await bcrypt.compare(password, user.passwordHash);
-        if (!validPassword) return null;
+        const valid = await bcrypt.compare(password, user.password_hash);
+        if (!valid) return null;
 
         return {
-          id: user.id,
+          id: user.profile_id,          // profiles.id — used everywhere in the app
           email: user.email,
           name: user.username,
-          isAdmin: user.isAdmin,
-          isSuperAdmin: user.isSuperAdmin,
+          image: user.emoji,
+          isAdmin: user.is_admin,
+          isSuperAdmin: user.is_super_admin,
           persona: user.persona,
-          onboardingDone: user.onboardingDone,
+          onboardingDone: user.onboarding_done,
         };
       },
     }),

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
-import { db, profiles } from "@/lib/db";
+import { db } from "@/lib/db";
+import { sql } from "drizzle-orm";
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -15,37 +15,42 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { email, password, username } = registerSchema.parse(body);
 
-    // Check if email already exists
-    const [existing] = await db
-      .select({ id: profiles.id })
-      .from(profiles)
-      .where(eq(profiles.email, email.toLowerCase()))
-      .limit(1);
-
-    if (existing) {
+    // Check if email already registered
+    const existing = await db.execute(
+      sql`SELECT id FROM users WHERE email = ${email.toLowerCase()} LIMIT 1`
+    );
+    if ((existing as any).rows?.length || (existing as any)[0]) {
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const [user] = await db
-      .insert(profiles)
-      .values({
-        email: email.toLowerCase(),
-        passwordHash,
-        username,
-        emoji: "🎮",
-        xp: 0,
-        level: 1,
-        stage: "newcomer",
-        streak: 0,
-        isAdmin: false,
-        isSuperAdmin: false,
-        onboardingDone: false,
-      })
-      .returning({ id: profiles.id, email: profiles.email, username: profiles.username });
+    // Insert into users table (triggers handle_new_user to auto-create a profile)
+    const userRows = await db.execute(
+      sql`INSERT INTO users (email, password_hash) VALUES (${email.toLowerCase()}, ${passwordHash}) RETURNING id`
+    );
+    const newUserId = (userRows as any).rows?.[0]?.id ?? (userRows as any)[0]?.id;
+    if (!newUserId) throw new Error("Failed to create user");
 
-    return NextResponse.json({ success: true, userId: user.id });
+    // Update the auto-created profile (or create it if trigger didn't fire)
+    await db.execute(sql`
+      INSERT INTO profiles (user_id, username, persona, emoji, onboarding_done)
+      VALUES (${newUserId}, ${username}, 'crypto_curious', '🎮', false)
+      ON CONFLICT (user_id) DO UPDATE
+        SET username        = EXCLUDED.username,
+            persona         = 'crypto_curious',
+            emoji           = '🎮',
+            onboarding_done = false,
+            updated_at      = NOW()
+    `);
+
+    // Return the profile id (main app identifier)
+    const profileRows = await db.execute(
+      sql`SELECT id FROM profiles WHERE user_id = ${newUserId} LIMIT 1`
+    );
+    const profileId = (profileRows as any).rows?.[0]?.id ?? (profileRows as any)[0]?.id;
+
+    return NextResponse.json({ success: true, userId: profileId });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
