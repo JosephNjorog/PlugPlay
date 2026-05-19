@@ -26,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ gam
       .from(missionAttempts)
       .where(
         and(
-          eq(missionAttempts.playerId, session.user.id),
+          eq(missionAttempts.userId, session.user.id),
           eq(missionAttempts.gameId, gameId),
           eq(missionAttempts.status, "completed")
         )
