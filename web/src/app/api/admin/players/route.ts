@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { desc, eq, like, sql } from "drizzle-orm";
+import { desc, like, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db, profiles, nftBadges, missionAttempts } from "@/lib/db";
+import { db, profiles } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
     .select({
       id: profiles.id,
       username: profiles.username,
-      email: profiles.email,
       emoji: profiles.emoji,
       persona: profiles.persona,
       xp: profiles.xp,
@@ -27,9 +26,10 @@ export async function GET(req: NextRequest) {
       isAdmin: profiles.isAdmin,
       isSuperAdmin: profiles.isSuperAdmin,
       createdAt: profiles.createdAt,
-      lastActiveAt: profiles.lastActiveAt,
+      // email and lastActiveAt come from users table via subquery
+      email: sql<string>`(SELECT email FROM users WHERE id = ${profiles.userId})`,
       badgeCount: sql<number>`(SELECT COUNT(*) FROM nft_badges WHERE user_id = ${profiles.id})`,
-      missionCount: sql<number>`(SELECT COUNT(*) FROM mission_attempts WHERE player_id = ${profiles.id} AND status = 'completed')`,
+      missionCount: sql<number>`(SELECT COUNT(*) FROM mission_attempts WHERE user_id = ${profiles.userId} AND status = 'completed')`,
     })
     .from(profiles)
     .where(search ? like(profiles.username, `%${search}%`) : undefined)
