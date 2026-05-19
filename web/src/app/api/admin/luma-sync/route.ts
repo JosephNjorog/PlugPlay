@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db, events, eventParticipants, profiles } from "@/lib/db";
+import { db, events, eventParticipants } from "@/lib/db";
 
 const syncSchema = z.object({
   eventId: z.string().uuid(),
@@ -47,13 +48,16 @@ export async function POST(req: NextRequest) {
 
   const emails = attendees.map((a) => a.email.toLowerCase());
 
-  // Match against existing profiles
-  const existingProfiles = await db
-    .select({ id: profiles.id, email: profiles.email })
-    .from(profiles)
-    .where(inArray(profiles.email, emails));
+  // Match emails against users table, return profiles.id keyed by email
+  const rows = await db.execute(sql`
+    SELECT u.email, p.id AS profile_id
+    FROM users u
+    JOIN profiles p ON p.user_id = u.id
+    WHERE u.email = ANY(${emails})
+  `);
+  const existingProfiles = ((rows as any).rows ?? (rows as any)) as { email: string; profile_id: string }[];
 
-  const profileMap = new Map(existingProfiles.map((p) => [p.email, p.id]));
+  const profileMap = new Map(existingProfiles.map((p) => [p.email, p.profile_id]));
 
   let matched = 0;
   let preRegistered = 0;
