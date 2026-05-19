@@ -14,14 +14,13 @@ import { relations } from "drizzle-orm";
 // ─── Profiles ──────────────────────────────────────────────────────────────
 export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey().defaultRandom(),
-  email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  userId: uuid("user_id").notNull().unique(), // FK to users table (auth)
   username: text("username").notNull(),
   emoji: text("emoji").default("🎮"),
-  persona: text("persona"), // student | developer | builder | founder | business
+  persona: text("persona"),
   xp: integer("xp").default(0).notNull(),
   level: integer("level").default(1).notNull(),
-  stage: text("stage").default("newcomer").notNull(), // newcomer | explorer | builder | validator | leader
+  stage: text("stage").default("newcomer").notNull(),
   streak: integer("streak").default(0).notNull(),
   walletAddress: text("wallet_address"),
   statusTag: text("status_tag"),
@@ -30,7 +29,6 @@ export const profiles = pgTable("profiles", {
   onboardingDone: boolean("onboarding_done").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  lastActiveAt: timestamp("last_active_at").defaultNow(),
 });
 
 // ─── Games / Missions ────────────────────────────────────────────────────────
@@ -122,7 +120,7 @@ export const eventParticipants = pgTable(
 // ─── Mission Attempts ────────────────────────────────────────────────────────
 export const missionAttempts = pgTable("mission_attempts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  playerId: uuid("player_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull(),
   gameId: text("game_id").notNull().references(() => games.id, { onDelete: "cascade" }),
   eventId: uuid("event_id").references(() => events.id, { onDelete: "set null" }),
   roundId: uuid("round_id"),
@@ -284,7 +282,7 @@ export const eventParticipantsRelations = relations(eventParticipants, ({ one })
 }));
 
 export const missionAttemptsRelations = relations(missionAttempts, ({ one }) => ({
-  player: one(profiles, { fields: [missionAttempts.playerId], references: [profiles.id] }),
+  player: one(profiles, { fields: [missionAttempts.userId], references: [profiles.userId] }),
   game: one(games, { fields: [missionAttempts.gameId], references: [games.id] }),
   event: one(events, { fields: [missionAttempts.eventId], references: [events.id] }),
 }));
