@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       statusTag: profiles.statusTag,
       missionCount: sql<number>`(
         SELECT COUNT(*) FROM mission_attempts
-        WHERE player_id = ${profiles.id} AND status = 'completed'
+        WHERE user_id = ${profiles.id} AND status = 'completed'
       )`,
     })
     .from(profiles)
