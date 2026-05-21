@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Crown, LayoutDashboard, Users, Calendar, Settings, LogOut } from "lucide-react";
+import { Crown, LayoutDashboard, Users, Calendar, Settings, LogOut, Medal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/roles", label: "Roles & Admins", icon: Users },
   { href: "/events", label: "Event Approval", icon: Calendar },
+  { href: "/leaderboard", label: "Leaderboard", icon: Medal },
   { href: "/settings", label: "Settings & NFT", icon: Settings },
 ];
 
