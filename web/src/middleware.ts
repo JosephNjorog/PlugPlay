@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 const { auth } = NextAuth(authConfig);
 
-const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up"];
+const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up", "/forgot-password", "/reset-password"];
 const AUTH_REQUIRED_PREFIXES = ["/journey", "/library", "/events", "/leaderboard", "/rewards", "/profile", "/play", "/challenge", "/arena", "/onboarding"];
 
 export default auth((req) => {

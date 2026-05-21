@@ -281,6 +281,14 @@ export default function SignInPage() {
                   </motion.p>
                 )}
               </AnimatePresence>
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-white/35 hover:text-arena-purple-light transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
 
             {/* Submit */}
