@@ -212,13 +212,6 @@ function Hero() {
       <div className="absolute inset-0 bg-gradient-to-b from-[#050510] via-transparent to-[#050510] pointer-events-none" />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 text-center">
-        {/* Pill badge */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 bg-white/[0.05] border border-white/[0.10] rounded-full px-4 py-1.5 text-sm text-slate-300 mb-8 backdrop-blur-sm">
-          <span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse" />
-          Powered by Avalanche · NFT Rewards On-Chain
-        </motion.div>
-
         {/* Headline */}
         <motion.h1 initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }}
           className="text-6xl sm:text-7xl md:text-8xl font-black tracking-tighter mb-4 leading-[0.92]">
@@ -363,8 +356,9 @@ function PersonasSection() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {PERSONAS.map((p, i) => (
             <SectionReveal key={p.id} delay={i * 0.08}>
-              <div
-                className="relative group rounded-2xl p-6 cursor-pointer transition-all duration-300 hover:-translate-y-2"
+              <Link
+                href="/sign-up"
+                className="relative group rounded-2xl p-6 block cursor-pointer transition-all duration-300 hover:-translate-y-2"
                 onMouseEnter={() => setHovered(i)}
                 onMouseLeave={() => setHovered(null)}
                 style={{
@@ -400,7 +394,7 @@ function PersonasSection() {
                     Choose Path <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
-              </div>
+              </Link>
             </SectionReveal>
           ))}
         </div>
