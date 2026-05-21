@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, like, and, or } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db, games } from "@/lib/db";
+import { logAdminAction } from "@/lib/admin-logger";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -33,5 +34,13 @@ export async function POST(req: NextRequest) {
   }
   const body = await req.json();
   const [game] = await db.insert(games).values(body).returning();
+  logAdminAction({
+    adminId: (session!.user as any).id,
+    adminName: session!.user!.name ?? "Admin",
+    action: "create_game",
+    entityType: "game",
+    entityId: game.id,
+    details: { title: game.title },
+  });
   return NextResponse.json(game, { status: 201 });
 }

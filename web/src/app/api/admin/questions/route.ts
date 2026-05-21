@@ -3,6 +3,7 @@ import { eq, and, asc } from "drizzle-orm";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db, quizQuestions } from "@/lib/db";
+import { logAdminAction } from "@/lib/admin-logger";
 
 const questionSchema = z.object({
   theme: z.string().min(1),
@@ -44,5 +45,13 @@ export async function POST(req: NextRequest) {
 
   const body = questionSchema.parse(await req.json());
   const [question] = await db.insert(quizQuestions).values(body).returning();
+  logAdminAction({
+    adminId: (session!.user as any).id,
+    adminName: session!.user!.name ?? "Admin",
+    action: "create_question",
+    entityType: "question",
+    entityId: question.id,
+    details: { theme: body.theme, difficulty: body.difficulty },
+  });
   return NextResponse.json(question, { status: 201 });
 }

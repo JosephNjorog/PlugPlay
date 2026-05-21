@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { logAdminAction } from "@/lib/admin-logger";
 
 const DEFAULT_QUESTIONS = [
   // ── Avalanche Basics ──────────────────────────────────────────────────────
@@ -73,5 +74,12 @@ export async function POST() {
     inserted++;
   }
 
+  logAdminAction({
+    adminId: (session!.user as any).id,
+    adminName: session!.user!.name ?? "Admin",
+    action: "seed_questions",
+    entityType: "question",
+    details: { inserted, total: DEFAULT_QUESTIONS.length },
+  });
   return NextResponse.json({ inserted, total: DEFAULT_QUESTIONS.length });
 }

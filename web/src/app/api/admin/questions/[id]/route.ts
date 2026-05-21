@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db, quizQuestions } from "@/lib/db";
+import { logAdminAction } from "@/lib/admin-logger";
 
 const patchSchema = z.object({
   theme: z.string().min(1).optional(),
@@ -28,6 +29,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .returning();
 
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  logAdminAction({
+    adminId: (session!.user as any).id,
+    adminName: session!.user!.name ?? "Admin",
+    action: "update_question",
+    entityType: "question",
+    entityId: id,
+    details: body,
+  });
   return NextResponse.json(updated);
 }
 
@@ -39,5 +48,12 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 
   await db.delete(quizQuestions).where(eq(quizQuestions.id, id));
+  logAdminAction({
+    adminId: (session!.user as any).id,
+    adminName: session!.user!.name ?? "Admin",
+    action: "delete_question",
+    entityType: "question",
+    entityId: id,
+  });
   return NextResponse.json({ success: true });
 }
