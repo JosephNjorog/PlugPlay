@@ -1,7 +1,7 @@
-import nodemailer from "nodemailer";
-
-function createTransport() {
-  return nodemailer.createTransport({
+export async function sendPasswordResetEmail(to: string, resetUrl: string) {
+  const nodemailer = await import("nodemailer");
+  const from = process.env.SMTP_FROM ?? `"Plug n' Play Arena" <${process.env.SMTP_USER}>`;
+  const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST!,
     port: Number(process.env.SMTP_PORT ?? 587),
     secure: process.env.SMTP_SECURE === "true",
@@ -10,11 +10,6 @@ function createTransport() {
       pass: process.env.SMTP_PASS!,
     },
   });
-}
-
-export async function sendPasswordResetEmail(to: string, resetUrl: string) {
-  const from = process.env.SMTP_FROM ?? `"Plug n' Play Arena" <${process.env.SMTP_USER}>`;
-  const transporter = createTransport();
 
   await transporter.sendMail({
     from,
