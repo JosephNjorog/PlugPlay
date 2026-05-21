@@ -203,6 +203,19 @@ export const arenaPlayers = pgTable(
   (t) => [unique().on(t.sessionId, t.nickname)]
 );
 
+// ─── Quiz Questions (solo missions) ─────────────────────────────────────────
+export const quizQuestions = pgTable("quiz_questions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  theme: text("theme").notNull(), // e.g. "Avalanche Basics"
+  question: text("question").notNull(),
+  options: jsonb("options").$type<string[]>().notNull(), // exactly 4 options
+  answer: integer("answer").notNull(), // zero-based index of correct option
+  difficulty: text("difficulty").default("beginner").notNull(), // beginner | intermediate | advanced
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // ─── Arena Questions ─────────────────────────────────────────────────────────
 export const arenaQuestions = pgTable("arena_questions", {
   id: uuid("id").primaryKey().defaultRandom(),
