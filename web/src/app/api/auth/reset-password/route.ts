@@ -10,30 +10,43 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const { token, newPassword } = schema.parse(await req.json());
+  try {
+    const body = await req.json().catch(() => ({}));
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+    const { token, newPassword } = parsed.data;
 
-  const rows = await db.execute(sql`
-    SELECT id, user_id, expires_at, used
-    FROM password_reset_tokens
-    WHERE token = ${token}
-    LIMIT 1
-  `);
-  const record = ((rows as any).rows ?? (rows as any))[0];
+    // Join to get users.id (for password update) via profile FK
+    const rows = await db.execute(sql`
+      SELECT t.id, t.expires_at, t.used, u.id AS users_id
+      FROM password_reset_tokens t
+      JOIN profiles p ON p.id = t.user_id
+      JOIN users u ON u.id = p.user_id
+      WHERE t.token = ${token}
+      LIMIT 1
+    `);
+    const record = ((rows as any).rows ?? (rows as any))[0];
 
-  if (!record) {
-    return NextResponse.json({ error: "Invalid or expired reset link." }, { status: 400 });
+    if (!record) {
+      return NextResponse.json({ error: "Invalid or expired reset link." }, { status: 400 });
+    }
+    if (record.used) {
+      return NextResponse.json({ error: "This reset link has already been used." }, { status: 400 });
+    }
+    if (new Date(record.expires_at) < new Date()) {
+      return NextResponse.json({ error: "This reset link has expired. Please request a new one." }, { status: 400 });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+
+    await db.execute(sql`UPDATE users SET password_hash = ${newHash}, updated_at = NOW() WHERE id = ${record.users_id}`);
+    await db.execute(sql`UPDATE password_reset_tokens SET used = TRUE WHERE id = ${record.id}`);
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    console.error("reset-password error:", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
-  if (record.used) {
-    return NextResponse.json({ error: "This reset link has already been used." }, { status: 400 });
-  }
-  if (new Date(record.expires_at) < new Date()) {
-    return NextResponse.json({ error: "This reset link has expired. Please request a new one." }, { status: 400 });
-  }
-
-  const newHash = await bcrypt.hash(newPassword, 12);
-
-  await db.execute(sql`UPDATE users SET password_hash = ${newHash}, updated_at = NOW() WHERE id = ${record.user_id}`);
-  await db.execute(sql`UPDATE password_reset_tokens SET used = TRUE WHERE id = ${record.id}`);
-
-  return NextResponse.json({ success: true });
 }

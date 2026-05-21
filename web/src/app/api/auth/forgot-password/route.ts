@@ -32,19 +32,25 @@ export async function POST(req: NextRequest) {
 
     await ensureTokensTable();
 
-    // Look up user — always return 200 to avoid email enumeration
-    const rows = await db.execute(sql`SELECT id FROM users WHERE email = ${email.toLowerCase()} LIMIT 1`);
+    // Look up profile_id (FK target) via users JOIN profiles
+    const rows = await db.execute(sql`
+      SELECT p.id AS profile_id
+      FROM users u
+      JOIN profiles p ON p.user_id = u.id
+      WHERE u.email = ${email.toLowerCase()}
+      LIMIT 1
+    `);
     const user = ((rows as any).rows ?? (rows as any))[0];
 
     if (user) {
-      await db.execute(sql`DELETE FROM password_reset_tokens WHERE user_id = ${user.id}`);
+      await db.execute(sql`DELETE FROM password_reset_tokens WHERE user_id = ${user.profile_id}`);
 
       const token = crypto.randomBytes(32).toString("hex");
       const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
       await db.execute(sql`
         INSERT INTO password_reset_tokens (user_id, token, expires_at)
-        VALUES (${user.id}, ${token}, ${expiresAt.toISOString()})
+        VALUES (${user.profile_id}, ${token}, ${expiresAt.toISOString()})
       `);
 
       const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
