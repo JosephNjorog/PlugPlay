@@ -4,6 +4,9 @@ import { LandingPage } from "@/components/landing/LandingPage";
 
 export default async function RootPage() {
   const session = await auth();
-  if (session?.user) redirect("/journey");
+  if (session?.user) {
+    if ((session.user as any).isAdmin) redirect("/admin");
+    redirect("/journey");
+  }
   return <LandingPage />;
 }
