@@ -8,13 +8,14 @@ import { getLevelFromXP, getStageFromXP } from "@/lib/utils";
 
 const submitSchema = z.object({
   accuracy: z.number().min(0).max(100),
-  timeSpent: z.number().positive(),
+  timeSpent: z.number().min(0), // 0 allowed — games can finish in under a second
   timeLimit: z.number().positive(),
   eventId: z.string().uuid().optional(),
   submissionData: z.any().optional(),
 });
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
   const { id: gameId } = await params;
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // Award XP & update profile
   const [profile] = await db.select().from(profiles).where(eq(profiles.id, session.user.id)).limit(1);
+  if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   const newXP = (profile.xp || 0) + xpEarned;
   const newLevel = getLevelFromXP(newXP);
   const newStage = getStageFromXP(newXP);
@@ -119,4 +121,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     badge,
     reward,
   });
+  } catch (err: any) {
+    console.error("[submit] error:", err);
+    return NextResponse.json(
+      { error: err?.message ?? "Internal server error" },
+      { status: err?.name === "ZodError" ? 400 : 500 }
+    );
+  }
 }
