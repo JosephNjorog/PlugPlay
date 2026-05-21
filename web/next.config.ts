@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "cloudflare-ipfs.com" },
     ],
   },
-  serverExternalPackages: ["@neondatabase/serverless"],
+  serverExternalPackages: ["@neondatabase/serverless", "nodemailer"],
 };
 
 export default nextConfig;

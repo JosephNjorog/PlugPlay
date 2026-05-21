@@ -22,38 +22,46 @@ async function ensureTokensTable() {
 }
 
 export async function POST(req: NextRequest) {
-  const { email } = schema.parse(await req.json());
-
-  await ensureTokensTable();
-
-  // Look up user — always return 200 to avoid email enumeration
-  const rows = await db.execute(sql`SELECT id FROM users WHERE email = ${email.toLowerCase()} LIMIT 1`);
-  const user = ((rows as any).rows ?? (rows as any))[0];
-
-  if (user) {
-    // Invalidate any existing tokens for this user
-    await db.execute(sql`DELETE FROM password_reset_tokens WHERE user_id = ${user.id}`);
-
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-
-    await db.execute(sql`
-      INSERT INTO password_reset_tokens (user_id, token, expires_at)
-      VALUES (${user.id}, ${token}, ${expiresAt.toISOString()})
-    `);
-
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
-
-    try {
-      await sendPasswordResetEmail(email.toLowerCase(), resetUrl);
-    } catch (err) {
-      console.error("Failed to send reset email:", err);
-      // Don't expose email send failure — log and move on
+  try {
+    const body = await req.json().catch(() => ({}));
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Valid email required" }, { status: 400 });
     }
-  }
+    const { email } = parsed.data;
 
-  return NextResponse.json({
-    message: "If that email is registered, a reset link has been sent.",
-  });
+    await ensureTokensTable();
+
+    // Look up user — always return 200 to avoid email enumeration
+    const rows = await db.execute(sql`SELECT id FROM users WHERE email = ${email.toLowerCase()} LIMIT 1`);
+    const user = ((rows as any).rows ?? (rows as any))[0];
+
+    if (user) {
+      await db.execute(sql`DELETE FROM password_reset_tokens WHERE user_id = ${user.id}`);
+
+      const token = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      await db.execute(sql`
+        INSERT INTO password_reset_tokens (user_id, token, expires_at)
+        VALUES (${user.id}, ${token}, ${expiresAt.toISOString()})
+      `);
+
+      const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+      const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+
+      try {
+        await sendPasswordResetEmail(email.toLowerCase(), resetUrl);
+      } catch (err) {
+        console.error("Failed to send reset email:", err);
+      }
+    }
+
+    return NextResponse.json({
+      message: "If that email is registered, a reset link has been sent.",
+    });
+  } catch (err: any) {
+    console.error("forgot-password error:", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
 }
