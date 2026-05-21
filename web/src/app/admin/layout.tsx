@@ -7,7 +7,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Calendar, Gamepad2, Trophy, Users,
-  Swords, FileCheck, Image, ChevronRight, LogOut, Menu, X, Crown, HelpCircle,
+  Swords, FileCheck, Image, ChevronRight, LogOut, Menu, X, Crown, HelpCircle, Medal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +17,7 @@ const navItems = [
   { href: "/admin/games", label: "Games", icon: Gamepad2 },
   { href: "/admin/questions", label: "Questions", icon: HelpCircle },
   { href: "/admin/challenges", label: "Challenges", icon: Trophy },
+  { href: "/admin/leaderboard", label: "Leaderboard", icon: Medal },
   { href: "/admin/players", label: "Players", icon: Users },
   { href: "/admin/arena", label: "Arena", icon: Swords },
   { href: "/admin/submissions", label: "Submissions", icon: FileCheck },
