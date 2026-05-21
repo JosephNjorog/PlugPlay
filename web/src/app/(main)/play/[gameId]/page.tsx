@@ -16,12 +16,18 @@ const GasRush = dynamic(() => import("@/components/game/GasRush"), { ssr: false,
 const BlockBuilder = dynamic(() => import("@/components/game/BlockBuilder"), { ssr: false, loading: () => <div className="text-white text-center">Loading game...</div> });
 const ChainCards = dynamic(() => import("@/components/game/ChainCards"), { ssr: false, loading: () => <div className="text-white text-center">Loading game...</div> });
 const TokenToss = dynamic(() => import("@/components/game/TokenToss"), { ssr: false, loading: () => <div className="text-white text-center">Loading game...</div> });
+const WalletWars = dynamic(() => import("@/components/game/WalletWars"), { ssr: false, loading: () => <div className="text-white text-center">Loading game...</div> });
+const DeFiDiner = dynamic(() => import("@/components/game/DeFiDiner"), { ssr: false, loading: () => <div className="text-white text-center">Loading game...</div> });
+const ProtocolPuzzle = dynamic(() => import("@/components/game/ProtocolPuzzle"), { ssr: false, loading: () => <div className="text-white text-center">Loading game...</div> });
 
 const ARCADE_GAMES: Record<string, React.ComponentType<{ onComplete: (score: number, accuracy: number) => void }>> = {
   "gas-rush": GasRush as any,
   "block-builder": BlockBuilder as any,
   "chain-cards": ChainCards as any,
   "token-toss": TokenToss as any,
+  "wallet-wars": WalletWars as any,
+  "defi-diner": DeFiDiner as any,
+  "protocol-puzzle": ProtocolPuzzle as any,
 };
 
 // Quiz question bank by theme
