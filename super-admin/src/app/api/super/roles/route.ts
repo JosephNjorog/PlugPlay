@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
+import { logAdminAction } from "@/lib/admin-logger";
 
 async function requireSuperAdmin() {
   const session = await auth();
@@ -61,6 +62,16 @@ export async function PATCH(req: NextRequest) {
     SET is_admin = ${isAdmin}, is_super_admin = ${isSuperAdmin}
     WHERE id = ${userId}
   `);
+
+  logAdminAction({
+    adminId: (session.user as any).id ?? "super-admin",
+    adminName: session.user?.name ?? "Super Admin",
+    adminEmail: session.user?.email,
+    action: role === "player" ? "demote_to_player" : `promote_to_${role}`,
+    entityType: "profile",
+    entityId: userId,
+    details: { newRole: role },
+  });
 
   return NextResponse.json({ success: true });
 }

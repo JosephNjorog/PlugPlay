@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Crown, LayoutDashboard, Users, Calendar, Settings, LogOut, Medal } from "lucide-react";
+import { Crown, LayoutDashboard, Users, Calendar, Settings, LogOut, Medal, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/roles", label: "Roles & Admins", icon: Users },
   { href: "/events", label: "Event Approval", icon: Calendar },
   { href: "/leaderboard", label: "Leaderboard", icon: Medal },
+  { href: "/activity", label: "Activity Log", icon: Activity },
   { href: "/settings", label: "Settings & NFT", icon: Settings },
 ];
 
