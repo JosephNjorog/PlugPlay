@@ -30,44 +30,19 @@ const ARCADE_GAMES: Record<string, React.ComponentType<{ onComplete: (score: num
   "protocol-puzzle": ProtocolPuzzle as any,
 };
 
-// Quiz question bank by theme
-const QUESTION_BANK: Record<string, Array<{ q: string; options: string[]; answer: number }>> = {
-  "Avalanche Basics": [
-    { q: "What is the native currency of Avalanche?", options: ["ETH", "AVAX", "SOL", "BNB"], answer: 1 },
-    { q: "Avalanche Fuji is a:", options: ["Mainnet", "Sidechain", "Testnet", "Layer 2"], answer: 2 },
-    { q: "Avalanche uses which consensus mechanism?", options: ["Proof of Work", "Proof of Stake", "Snowman", "Delegated PoS"], answer: 2 },
-    { q: "The Avalanche C-Chain is compatible with:", options: ["Solana VM", "EVM", "WASM", "CosmWasm"], answer: 1 },
-    { q: "What is the Avalanche Explorer called?", options: ["Etherscan", "Snowtrace", "Solscan", "BscScan"], answer: 1 },
-  ],
-  "DeFi & Staking": [
-    { q: "What does DeFi stand for?", options: ["Digital Finance", "Decentralized Finance", "Deferred Finance", "Distributed Finance"], answer: 1 },
-    { q: "Staking involves:", options: ["Mining blocks", "Locking tokens to secure the network", "Selling NFTs", "Building dApps"], answer: 1 },
-    { q: "A liquidity pool holds:", options: ["NFTs only", "FIAT currency", "Pairs of tokens for trading", "Validator keys"], answer: 2 },
-    { q: "Impermanent loss happens when:", options: ["Gas fees spike", "Prices diverge from when you added liquidity", "A hack occurs", "Staking ends"], answer: 1 },
-    { q: "Yield farming is the practice of:", options: ["Growing crypto physically", "Moving liquidity to earn rewards", "Mining AVAX", "Burning tokens"], answer: 1 },
-  ],
-  "Smart Contracts": [
-    { q: "Smart contracts execute:", options: ["Only on Ethereum", "Only with human approval", "Automatically when conditions are met", "Only on weekdays"], answer: 2 },
-    { q: "Solidity is used to write:", options: ["Frontend apps", "Smart contracts on EVM", "Database queries", "Network protocols"], answer: 1 },
-    { q: "What is gas in EVM blockchains?", options: ["Network fuel", "A cryptocurrency", "A fee for computation", "A consensus vote"], answer: 2 },
-    { q: "ABI stands for:", options: ["Avalanche Block Interface", "Application Binary Interface", "Asset Bridge Index", "Automated Bot Integration"], answer: 1 },
-    { q: "A token standard on Avalanche C-Chain for fungible tokens:", options: ["ERC-721", "ERC-1155", "ERC-20", "BEP-20"], answer: 2 },
-  ],
-  "NFTs & Bridges": [
-    { q: "NFT stands for:", options: ["New Financial Token", "Non-Fungible Token", "Network File Transfer", "Node Finality Test"], answer: 1 },
-    { q: "ERC-721 is the standard for:", options: ["Fungible tokens", "Non-fungible tokens", "Stablecoins", "Governance tokens"], answer: 1 },
-    { q: "A bridge in blockchain allows:", options: ["Physical connections", "Cross-chain asset transfers", "Mining hardware connection", "Node syncing"], answer: 1 },
-    { q: "IPFS is used for NFTs to store:", options: ["Private keys", "Smart contracts", "Metadata and images", "Validator data"], answer: 2 },
-    { q: "Core is Avalanche's official:", options: ["Exchange", "Wallet", "Bridge", "DEX"], answer: 1 },
-  ],
-  "Consensus & Validators": [
-    { q: "Validators in Proof of Stake:", options: ["Mine blocks using GPUs", "Lock tokens to validate transactions", "Issue tokens to users", "Run the Luma API"], answer: 1 },
-    { q: "Snowman consensus is used on:", options: ["Bitcoin", "Ethereum", "Avalanche C-Chain and P-Chain", "Solana"], answer: 2 },
-    { q: "What is slashing?", options: ["Reducing transaction fees", "Punishing validators for misbehavior", "Burning NFTs", "Splitting a blockchain"], answer: 1 },
-    { q: "The minimum stake to validate on Avalanche is:", options: ["10 AVAX", "100 AVAX", "2000 AVAX", "500 AVAX"], answer: 2 },
-    { q: "Finality on Avalanche is achieved in approximately:", options: ["10 minutes", "2 seconds", "1 hour", "30 seconds"], answer: 1 },
-  ],
-};
+// Fallback question bank used when DB has no questions for the given themes
+const FALLBACK_QUESTIONS: Array<{ q: string; options: string[]; answer: number }> = [
+  { q: "What is the native currency of Avalanche?", options: ["ETH", "AVAX", "SOL", "BNB"], answer: 1 },
+  { q: "Avalanche Fuji is a:", options: ["Mainnet", "Sidechain", "Testnet", "Layer 2"], answer: 2 },
+  { q: "Avalanche uses which consensus mechanism?", options: ["Proof of Work", "Proof of Stake", "Snowman", "Delegated PoS"], answer: 2 },
+  { q: "The Avalanche C-Chain is compatible with:", options: ["Solana VM", "EVM", "WASM", "CosmWasm"], answer: 1 },
+  { q: "What is the Avalanche Explorer called?", options: ["Etherscan", "Snowtrace", "Solscan", "BscScan"], answer: 1 },
+  { q: "What does DeFi stand for?", options: ["Digital Finance", "Decentralized Finance", "Deferred Finance", "Distributed Finance"], answer: 1 },
+  { q: "Smart contracts execute:", options: ["Only on Ethereum", "Only with human approval", "Automatically when conditions are met", "Only on weekdays"], answer: 2 },
+  { q: "NFT stands for:", options: ["New Financial Token", "Non-Fungible Token", "Network File Transfer", "Node Finality Test"], answer: 1 },
+  { q: "Finality on Avalanche is achieved in approximately:", options: ["10 minutes", "2 seconds", "1 hour", "30 seconds"], answer: 1 },
+  { q: "The minimum stake to validate on Avalanche is:", options: ["10 AVAX", "100 AVAX", "2000 AVAX", "500 AVAX"], answer: 2 },
+];
 
 type GameState = "idle" | "playing" | "result";
 
@@ -75,16 +50,6 @@ interface QuizQuestion {
   q: string;
   options: string[];
   answer: number;
-}
-
-function getQuestionsForGame(themes: string[]): QuizQuestion[] {
-  const pool: QuizQuestion[] = [];
-  for (const theme of themes) {
-    const bank = QUESTION_BANK[theme];
-    if (bank) pool.push(...bank);
-  }
-  if (pool.length === 0) pool.push(...QUESTION_BANK["Avalanche Basics"]);
-  return pool.sort(() => Math.random() - 0.5).slice(0, 10);
 }
 
 export default function PlayPage({ params }: { params: Promise<{ gameId: string }> }) {
@@ -107,6 +72,21 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
     queryFn: () => fetch(`/api/games/${gameId}`).then((r) => r.json()),
   });
 
+  // Fetch quiz questions from DB; falls back to FALLBACK_QUESTIONS if empty
+  const { data: dbQuestions } = useQuery<{ question: string; options: string[]; answer: number }[]>({
+    queryKey: ["quiz-questions", game?.themes],
+    queryFn: async () => {
+      const themes: string[] = game?.themes ?? [];
+      const params = new URLSearchParams();
+      themes.forEach((t) => params.append("theme", t));
+      const res = await fetch(`/api/questions?${params}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!game && !game.error,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const submitMutation = useMutation({
     mutationFn: async (payload: { accuracy: number; timeSpent: number }) => {
       const r = await fetch(`/api/missions/${gameId}/submit`, {
@@ -114,13 +94,15 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...payload, timeLimit }),
       });
-      return r.json();
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error ?? "Failed to submit score");
+      return data;
     },
     onSuccess: (data) => {
       if (data.xpEarned) toast.success(`+${data.xpEarned} XP earned!`);
       if (data.badge) toast.success(`Badge unlocked: ${data.badge.title} ${data.badge.emoji}`);
     },
-    onError: () => toast.error("Failed to submit score"),
+    onError: (err: Error) => toast.error(err.message ?? "Failed to submit score"),
   });
 
   // Start timer per question
@@ -142,7 +124,11 @@ export default function PlayPage({ params }: { params: Promise<{ gameId: string 
   }, [currentQ, gameState, selected]);
 
   const startGame = () => {
-    const qs = getQuestionsForGame(game?.themes || []);
+    const pool: QuizQuestion[] =
+      dbQuestions && dbQuestions.length > 0
+        ? dbQuestions.map((q) => ({ q: q.question, options: q.options, answer: q.answer }))
+        : FALLBACK_QUESTIONS;
+    const qs = pool.sort(() => Math.random() - 0.5).slice(0, 10);
     setQuestions(qs);
     setCurrentQ(0);
     setAnswers([]);
