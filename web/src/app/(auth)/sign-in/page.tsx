@@ -123,11 +123,16 @@ export default function SignInPage() {
 
       if (result?.ok) {
         toast.success("Welcome back!", { description: "Loading your arena..." });
-        // Fetch session to check onboardingDone
         const res = await fetch("/api/profile");
         if (res.ok) {
           const profile = await res.json();
-          router.push(profile.onboardingDone ? "/journey" : "/onboarding");
+          if (profile.is_admin) {
+            router.push("/admin");
+          } else if (!profile.onboarding_done) {
+            router.push("/onboarding");
+          } else {
+            router.push("/journey");
+          }
         } else {
           router.push("/journey");
         }
@@ -327,7 +332,7 @@ export default function SignInPage() {
             </div>
             <button
               type="button"
-              onClick={() => signIn("google", { callbackUrl: "/journey" })}
+              onClick={() => signIn("google", { callbackUrl: "/" })}
               className="w-full flex items-center justify-center gap-3 bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.09] hover:border-white/20 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">

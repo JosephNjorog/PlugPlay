@@ -5,7 +5,7 @@
   "installCommand": "npm install",
   "regions": ["iad1"],
   "env": {
-    "NEXTAUTH_URL": "https://your-super-admin-domain.vercel.app"
+    "NEXTAUTH_URL": "https://adminplugplay.vercel.app"
   },
   "headers": [
     {

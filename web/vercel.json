@@ -5,7 +5,7 @@
   "installCommand": "npm install",
   "regions": ["iad1"],
   "env": {
-    "NEXTAUTH_URL": "https://your-web-domain.vercel.app"
+    "NEXTAUTH_URL": "https://plugplayavax.vercel.app"
   },
   "headers": [
     {

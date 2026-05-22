@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 
+process.env.AUTH_URL = "https://adminplugplay.vercel.app";
+
 async function getSuperAdminProfile(email: string) {
   const rows = await db.execute(sql`
     SELECT p.id AS profile_id, p.username, p.emoji, p.is_super_admin
