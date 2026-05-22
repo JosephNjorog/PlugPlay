@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, X, Swords, Users, Zap, Brain, Trash2 } from "lucide-react";
+import { Plus, Search, X, Swords, Users, Zap, Brain, Play, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 const TOPICS = [
   "avalanche_basics", "defi", "nfts", "smart_contracts",
   "validators", "bridges", "wallets", "security",
+  "bitcoin_pizza",
 ];
 
 const statusColors: Record<string, string> = {
@@ -64,6 +65,36 @@ export default function AdminArenaPage() {
       setSelectedSession(null);
     },
     onError: () => toast.error("Failed to end session"),
+  });
+
+  const startSession = useMutation({
+    mutationFn: (code: string) =>
+      fetch(`/api/arena/sessions/${code}/start`, { method: "POST" }).then((r) => {
+        if (!r.ok) throw new Error(); return r.json();
+      }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["admin-arena-sessions"] });
+      toast.success(`Game started — ${data.questionCount} questions ready`);
+      setSelectedSession((s: any) => s ? { ...s, status: "active" } : s);
+    },
+    onError: () => toast.error("Failed to start session"),
+  });
+
+  const nextQuestion = useMutation({
+    mutationFn: (code: string) =>
+      fetch(`/api/arena/sessions/${code}/next`, { method: "POST" }).then((r) => {
+        if (!r.ok) throw new Error(); return r.json();
+      }),
+    onSuccess: (data) => {
+      if (data.done) {
+        qc.invalidateQueries({ queryKey: ["admin-arena-sessions"] });
+        setSelectedSession(null);
+        toast.success("All questions done — session ended!");
+      } else {
+        toast.success(`Question ${data.roundIndex + 1} of ${data.totalQuestions} pushed`);
+      }
+    },
+    onError: () => toast.error("Failed to push next question"),
   });
 
   const addQuestion = useMutation({
@@ -204,6 +235,26 @@ export default function AdminArenaPage() {
                 </div>
               </div>
 
+              {selectedSession.status === "waiting" && (
+                <button
+                  onClick={() => startSession.mutate(selectedSession.code)}
+                  disabled={startSession.isPending}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-2.5 rounded-xl hover:opacity-90 transition-all text-sm disabled:opacity-50 mb-2"
+                >
+                  <Play size={14} />
+                  {startSession.isPending ? "Starting…" : "Start Game"}
+                </button>
+              )}
+              {selectedSession.status === "active" && (
+                <button
+                  onClick={() => nextQuestion.mutate(selectedSession.code)}
+                  disabled={nextQuestion.isPending}
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-arena-purple to-arena-cyan text-white font-bold py-2.5 rounded-xl hover:opacity-90 transition-all text-sm disabled:opacity-50 mb-2"
+                >
+                  <ChevronRight size={14} />
+                  {nextQuestion.isPending ? "Pushing…" : "Next Question"}
+                </button>
+              )}
               {selectedSession.status !== "ended" && (
                 <button
                   onClick={() => endSession.mutate(selectedSession.code)}

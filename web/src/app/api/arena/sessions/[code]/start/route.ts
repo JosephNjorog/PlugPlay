@@ -25,12 +25,18 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ co
     .set({ status: "active", roundIndex: 0 })
     .where(eq(arenaSessions.id, arenaSession.id));
 
+  // Normalize topic: "Avalanche Basics" → "avalanche_basics"
+  const topic = (arenaSession.topic || "avalanche_basics")
+    .toLowerCase()
+    .replace(/[\s&]+/g, "_")
+    .replace(/[^a-z0-9_]/g, "");
+
   // Fetch questions for the topic
   const questions = await db
     .select()
     .from(arenaQuestions)
-    .where(eq(arenaQuestions.topic, arenaSession.topic || "Avalanche Basics"))
-    .limit(10);
+    .where(eq(arenaQuestions.topic, topic))
+    .limit(20);
 
   // Notify all players
   await pusherServer.trigger(arenaChannel(code), ARENA_EVENTS.SESSION_STARTED, {

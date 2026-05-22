@@ -12,18 +12,22 @@ import { getPusherClient, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
 interface Player { id: string; nickname: string; score: number; correctAnswers: number; }
 
 const TOPICS = [
-  "Avalanche Basics",
-  "Consensus & Validators",
-  "DeFi & Staking",
-  "Smart Contracts",
-  "NFTs & Bridges",
+  { value: "avalanche_basics",  label: "Avalanche Basics" },
+  { value: "defi",              label: "DeFi & Staking" },
+  { value: "smart_contracts",   label: "Smart Contracts" },
+  { value: "nfts",              label: "NFTs & Bridges" },
+  { value: "security",          label: "Security & Wallets" },
+  { value: "validators",        label: "Validators & Consensus" },
 ];
 
 export default function ArenaHostPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [step, setStep] = useState<"setup" | "waiting" | "active" | "ended">("setup");
-  const [topic, setTopic] = useState(TOPICS[0]);
+  const [topic, setTopic] = useState(TOPICS[0].value);
+  const [roundIndex, setRoundIndex] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [isNexting, setIsNexting] = useState(false);
   const [maxPlayers, setMaxPlayers] = useState(50);
   const [sessionCode, setSessionCode] = useState<string>("");
   const [sessionId, setSessionId] = useState<string>("");
@@ -80,12 +84,34 @@ export default function ArenaHostPage() {
     try {
       const res = await fetch(`/api/arena/sessions/${sessionCode}/start`, { method: "POST" });
       if (!res.ok) throw new Error();
+      const data = await res.json();
+      setRoundIndex(0);
+      setTotalQuestions(data.questionCount || 0);
       setStep("active");
-      toast.success("Game started! Questions are being pushed to players.");
+      toast.success(`Game started! ${data.questionCount} questions ready.`);
     } catch {
       toast.error("Failed to start session");
     } finally {
       setIsStarting(false);
+    }
+  };
+
+  const nextQuestion = async () => {
+    setIsNexting(true);
+    try {
+      const res = await fetch(`/api/arena/sessions/${sessionCode}/next`, { method: "POST" });
+      const data = await res.json();
+      if (data.done) {
+        setStep("ended");
+        toast.success("All questions done — session ended!");
+      } else {
+        setRoundIndex(data.roundIndex);
+        toast.success(`Question ${data.roundIndex + 1} of ${data.totalQuestions} pushed`);
+      }
+    } catch {
+      toast.error("Failed to advance question");
+    } finally {
+      setIsNexting(false);
     }
   };
 
@@ -126,15 +152,15 @@ export default function ArenaHostPage() {
                     <div className="space-y-2">
                       {TOPICS.map((t) => (
                         <button
-                          key={t}
-                          onClick={() => setTopic(t)}
+                          key={t.value}
+                          onClick={() => setTopic(t.value)}
                           className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all ${
-                            topic === t
+                            topic === t.value
                               ? "bg-avax-red/20 border border-avax-red/40 text-avax-red-light"
                               : "bg-white/[0.04] border border-white/[0.06] text-slate-400 hover:text-white"
                           }`}
                         >
-                          {t}
+                          {t.label}
                         </button>
                       ))}
                     </div>
@@ -228,9 +254,25 @@ export default function ArenaHostPage() {
                       disabled={isStarting || players.length === 0}
                       className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-3 rounded-xl disabled:opacity-50 hover:opacity-90 transition-all"
                     >
-                      <Play size={16} />
+                      {isStarting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Play size={16} />}
                       Start Game ({players.length} players)
                     </button>
+                  )}
+                  {step === "active" && (
+                    <>
+                      <div className="text-center text-slate-400 text-xs mb-1">
+                        Question <span className="text-white font-bold">{roundIndex + 1}</span>
+                        {totalQuestions > 0 && <> of <span className="text-white font-bold">{totalQuestions}</span></>}
+                      </div>
+                      <button
+                        onClick={nextQuestion}
+                        disabled={isNexting}
+                        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-arena-purple to-arena-cyan text-white font-bold py-3 rounded-xl disabled:opacity-50 hover:opacity-90 transition-all"
+                      >
+                        {isNexting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <ChevronRight size={16} />}
+                        Next Question
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={endSession}
