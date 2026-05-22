@@ -17,14 +17,18 @@ export default auth((req) => {
   if (pathname.startsWith("/admin")) {
     if (!req.auth) return NextResponse.redirect(new URL("/sign-in", req.url));
     if (!(req.auth.user as any)?.isAdmin) return NextResponse.redirect(new URL("/", req.url));
-    return NextResponse.next();
+    const res = NextResponse.next();
+    res.headers.set("x-pathname", pathname);
+    return res;
   }
 
   // Protected user routes
   const needsAuth = AUTH_REQUIRED_PREFIXES.some((p) => pathname.startsWith(p));
   if (needsAuth && !req.auth) return NextResponse.redirect(new URL("/sign-in", req.url));
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  response.headers.set("x-pathname", pathname);
+  return response;
 });
 
 export const config = {

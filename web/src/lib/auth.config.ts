@@ -4,6 +4,7 @@ import type { NextAuthConfig } from "next-auth";
 // Used only by middleware to read the JWT token.
 export const authConfig: NextAuthConfig = {
   providers: [],
+  trustHost: true,
   pages: {
     signIn: "/sign-in",
     error: "/sign-in",

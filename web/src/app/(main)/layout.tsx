@@ -14,17 +14,16 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
   const isRoot = pathname === "/" || pathname === "";
 
-  // Landing page is public
-  if (!session?.user && !isRoot) redirect("/sign-in");
+  // Landing page is public — serve it without auth checks or layout chrome
+  if (isRoot) return <>{children}</>;
+
+  if (!session?.user) redirect("/sign-in");
 
   // Push new users through onboarding
   const onboardingDone = (session?.user as any)?.onboardingDone as boolean | undefined;
-  if (session?.user && onboardingDone === false && !pathname.includes("/onboarding")) {
+  if (onboardingDone === false && !pathname.includes("/onboarding")) {
     redirect("/onboarding");
   }
-
-  // Landing page gets no layout chrome
-  if (isRoot) return <>{children}</>;
 
   return (
     <div className="min-h-screen bg-[#080810] text-white flex">
