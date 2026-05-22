@@ -45,7 +45,14 @@ export async function DELETE(
     await db.execute(sql`DELETE FROM nft_badges            WHERE user_id = ${profileId}`);
     await db.execute(sql`DELETE FROM nft_mints             WHERE user_id = ${profileId}`);
     await db.execute(sql`DELETE FROM password_reset_tokens WHERE user_id = ${profileId}`);
-    await db.execute(sql`DELETE FROM admin_activity_logs   WHERE admin_id = ${profileId}`);
+    // admin_activity_logs is self-bootstrapped — may not exist yet
+    await db.execute(sql`
+      DO $$ BEGIN
+        IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'admin_activity_logs') THEN
+          DELETE FROM admin_activity_logs WHERE admin_id = ${profileId};
+        END IF;
+      END $$
+    `).catch(() => {});
     await db.execute(sql`DELETE FROM profiles              WHERE id       = ${profileId}`);
     await db.execute(sql`DELETE FROM users                 WHERE id       = ${userId}`);
 
