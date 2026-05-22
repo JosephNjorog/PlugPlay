@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSession } from "next-auth/react";
@@ -9,6 +9,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Zap, Users, ArrowRight, Wifi, QrCode } from "lucide-react";
+import { getPusherClient, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
 
 const schema = z.object({
   code: z.string().length(6, "Code must be 6 characters").toUpperCase(),
@@ -25,6 +26,18 @@ export default function ArenaJoinPage() {
   const [joined, setJoined] = useState(false);
   const [playerId, setPlayerId] = useState<string>("");
   const [sessionCode, setSessionCode] = useState<string>("");
+  const [playerCount, setPlayerCount] = useState(0);
+  const [maxPlayers, setMaxPlayers] = useState(300);
+
+  useEffect(() => {
+    if (!joined || !sessionCode) return;
+    const pusher = getPusherClient();
+    const ch = pusher.subscribe(arenaChannel(sessionCode));
+    ch.bind(ARENA_EVENTS.PLAYER_JOINED, (data: { playerCount?: number }) => {
+      if (data?.playerCount !== undefined) setPlayerCount(data.playerCount);
+    });
+    return () => pusher.unsubscribe(arenaChannel(sessionCode));
+  }, [joined, sessionCode]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -48,9 +61,11 @@ export default function ArenaJoinPage() {
         return;
       }
 
-      const { player, session: arenaSession } = await res.json();
+      const { player, session: arenaSession, playerCount: count } = await res.json();
       setPlayerId(player.id);
       setSessionCode(data.code.toUpperCase());
+      setPlayerCount(count ?? 1);
+      setMaxPlayers(arenaSession?.maxPlayers ?? 300);
       setJoined(true);
       toast.success("Joined the arena! Waiting for host to start...");
     } catch {
@@ -169,8 +184,28 @@ export default function ArenaJoinPage() {
                 <Wifi size={24} className="text-arena-cyan animate-pulse" />
               </div>
               <h2 className="text-xl font-bold text-white mb-2">You're in!</h2>
-              <p className="text-slate-400 mb-2">Arena code: <span className="text-white font-mono font-bold">{sessionCode}</span></p>
-              <p className="text-slate-500 text-sm mb-8">Waiting for the host to start the session...</p>
+              <p className="text-slate-400 mb-3">Arena code: <span className="text-white font-mono font-bold">{sessionCode}</span></p>
+
+              {/* Live player counter */}
+              <motion.div
+                key={playerCount}
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+                className="flex items-center justify-center gap-2 mb-2"
+              >
+                <Users size={16} className="text-arena-cyan" />
+                <span className="text-arena-cyan font-bold text-lg">{playerCount}</span>
+                <span className="text-slate-500 text-sm">/ {maxPlayers} joined</span>
+              </motion.div>
+              <div className="w-full bg-white/[0.06] rounded-full h-1.5 mb-6 overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-arena-cyan to-arena-purple rounded-full"
+                  animate={{ width: `${Math.min((playerCount / maxPlayers) * 100, 100)}%` }}
+                  transition={{ duration: 0.4 }}
+                />
+              </div>
+
+              <p className="text-slate-500 text-sm mb-6">Waiting for the host to start the session...</p>
 
               <div className="flex gap-3">
                 <button

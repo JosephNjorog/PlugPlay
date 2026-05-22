@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Zap, Trophy, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Zap, Trophy, CheckCircle, XCircle, Clock, Users } from "lucide-react";
 import { getPusherClient, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
 
 interface Question {
@@ -45,6 +45,7 @@ function ArenaPlayContent() {
   const [gameStatus, setGameStatus] = useState<"waiting" | "playing" | "answering" | "ended">("waiting");
   const [startTime, setStartTime] = useState(0);
   const [finalLeaderboard, setFinalLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [playerCount, setPlayerCount] = useState(0);
 
   const submitAnswer = useCallback(
     async (answer: number) => {
@@ -80,6 +81,10 @@ function ArenaPlayContent() {
     if (!code) return;
     const pusher = getPusherClient();
     const ch = pusher.subscribe(arenaChannel(code));
+
+    ch.bind(ARENA_EVENTS.PLAYER_JOINED, (data: { playerCount?: number }) => {
+      if (data?.playerCount !== undefined) setPlayerCount(data.playerCount);
+    });
 
     ch.bind(ARENA_EVENTS.SESSION_STARTED, () => {
       setGameStatus("playing");
@@ -131,8 +136,17 @@ function ArenaPlayContent() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-avax-red to-arena-purple flex items-center justify-center text-3xl mx-auto mb-4 animate-pulse-glow">⚡</div>
             <h2 className="text-2xl font-bold text-white mb-2">Waiting for host...</h2>
-            <p className="text-slate-400">Code: <span className="font-mono font-bold text-white">{code}</span></p>
-            <div className="mt-6 flex gap-1">
+            <p className="text-slate-400 mb-4">Code: <span className="font-mono font-bold text-white">{code}</span></p>
+
+            {playerCount > 0 && (
+              <motion.div key={playerCount} initial={{ scale: 1.15 }} animate={{ scale: 1 }} className="inline-flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-4 py-2 mb-4">
+                <Users size={14} className="text-arena-cyan" />
+                <span className="text-arena-cyan font-bold">{playerCount}</span>
+                <span className="text-slate-400 text-sm">player{playerCount !== 1 ? "s" : ""} joined</span>
+              </motion.div>
+            )}
+
+            <div className="flex gap-1 justify-center mt-2">
               {[0, 1, 2].map((i) => (
                 <motion.div key={i} className="w-2 h-2 rounded-full bg-arena-purple" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 0.6, delay: i * 0.2, repeat: Infinity }} />
               ))}

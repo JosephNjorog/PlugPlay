@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { eq, and } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db, arenaSessions, arenaPlayers } from "@/lib/db";
 import { pusherServer, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
@@ -43,11 +43,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
     return NextResponse.json({ error: "Nickname already taken in this session" }, { status: 409 });
   }
 
-  // Notify other players
+  const [{ value: playerCount }] = await db
+    .select({ value: count() })
+    .from(arenaPlayers)
+    .where(eq(arenaPlayers.sessionId, arenaSession.id));
+
   await pusherServer.trigger(arenaChannel(code), ARENA_EVENTS.PLAYER_JOINED, {
     playerId: player.id,
     nickname: player.nickname,
+    playerCount: Number(playerCount),
   });
 
-  return NextResponse.json({ player, session: arenaSession });
+  return NextResponse.json({ player, session: arenaSession, playerCount: Number(playerCount) });
 }
