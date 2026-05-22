@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { db, arenaSessions, arenaQuestions } from "@/lib/db";
+import { db, arenaSessions, arenaQuestions, arenaPlayers } from "@/lib/db";
 import { pusherServer, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
@@ -37,14 +37,28 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ co
     .limit(20);
 
   if (nextRound >= questions.length) {
-    // No more questions — end the session
     await db
       .update(arenaSessions)
       .set({ status: "ended", endedAt: new Date() })
       .where(eq(arenaSessions.id, arenaSession.id));
 
+    const players = await db
+      .select()
+      .from(arenaPlayers)
+      .where(eq(arenaPlayers.sessionId, arenaSession.id))
+      .orderBy(desc(arenaPlayers.score));
+
+    const leaderboard = players.map((p, i) => ({
+      id: p.id,
+      nickname: p.nickname,
+      score: p.score,
+      correctAnswers: p.correctAnswers,
+      rank: i + 1,
+    }));
+
     await pusherServer.trigger(arenaChannel(code), ARENA_EVENTS.SESSION_ENDED, {
       message: "All questions completed!",
+      leaderboard,
     });
 
     return NextResponse.json({ done: true, totalQuestions: questions.length });

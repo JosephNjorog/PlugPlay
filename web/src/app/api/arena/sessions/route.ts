@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       hostId: session!.user!.id as string,
       status: "waiting" as string,
       topic: (body.topic || "Avalanche Basics") as string,
-      maxPlayers: body.maxPlayers || 50,
+      maxPlayers: body.maxPlayers || 300,
     })
     .returning();
 

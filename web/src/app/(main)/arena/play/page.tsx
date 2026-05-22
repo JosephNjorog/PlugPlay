@@ -44,6 +44,7 @@ function ArenaPlayContent() {
   const [roundIndex, setRoundIndex] = useState(0);
   const [gameStatus, setGameStatus] = useState<"waiting" | "playing" | "answering" | "ended">("waiting");
   const [startTime, setStartTime] = useState(0);
+  const [finalLeaderboard, setFinalLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   const submitAnswer = useCallback(
     async (answer: number) => {
@@ -99,9 +100,11 @@ function ArenaPlayContent() {
       setLeaderboard(data.leaderboard);
     });
 
-    ch.bind(ARENA_EVENTS.SESSION_ENDED, () => {
+    ch.bind(ARENA_EVENTS.SESSION_ENDED, (data: { leaderboard?: LeaderboardEntry[]; message?: string }) => {
       setGameStatus("ended");
-      toast.info("Session ended by host");
+      if (data?.leaderboard?.length) {
+        setFinalLeaderboard(data.leaderboard);
+      }
     });
 
     return () => pusher.unsubscribe(arenaChannel(code));
@@ -218,12 +221,72 @@ function ArenaPlayContent() {
         )}
 
         {gameStatus === "ended" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-            <div className="text-6xl mb-4">🏆</div>
-            <h2 className="text-3xl font-black text-white mb-2">Game Over!</h2>
-            <p className="text-slate-400 mb-2">Your total score</p>
-            <div className="text-5xl font-black text-arena-gold">{totalScore.toLocaleString()}</div>
-            <p className="text-slate-500 mt-2">pts</p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-3">🏆</div>
+              <h2 className="text-3xl font-black text-white mb-1">Game Over!</h2>
+              <p className="text-slate-400 text-sm">Final Results</p>
+            </div>
+
+            {finalLeaderboard.length > 0 ? (
+              <div className="glass-card rounded-2xl overflow-hidden">
+                {/* Top 3 podium */}
+                {finalLeaderboard.slice(0, 3).map((entry, i) => {
+                  const medals = ["🥇", "🥈", "🥉"];
+                  const isMe = entry.id === playerId;
+                  return (
+                    <motion.div
+                      key={entry.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className={`flex items-center gap-3 px-5 py-4 border-b border-white/[0.06] ${
+                        isMe ? "bg-avax-red/10" : i === 0 ? "bg-arena-gold/5" : "bg-white/[0.02]"
+                      }`}
+                    >
+                      <span className="text-2xl w-8">{medals[i]}</span>
+                      <div className="flex-1">
+                        <span className={`font-bold ${isMe ? "text-avax-red" : "text-white"}`}>
+                          {entry.nickname}{isMe && " (you)"}
+                        </span>
+                        <p className="text-slate-500 text-xs">{entry.correctAnswers} correct</p>
+                      </div>
+                      <span className="font-mono font-black text-arena-gold text-lg">{entry.score.toLocaleString()}</span>
+                    </motion.div>
+                  );
+                })}
+
+                {/* Rest of leaderboard */}
+                <div className="max-h-48 overflow-y-auto">
+                  {finalLeaderboard.slice(3).map((entry, i) => {
+                    const isMe = entry.id === playerId;
+                    return (
+                      <div
+                        key={entry.id}
+                        className={`flex items-center gap-3 px-5 py-3 border-b border-white/[0.04] ${isMe ? "bg-avax-red/10" : ""}`}
+                      >
+                        <span className="text-slate-500 text-sm w-8">#{entry.rank}</span>
+                        <span className={`flex-1 text-sm ${isMe ? "text-avax-red font-bold" : "text-slate-300"}`}>
+                          {entry.nickname}{isMe && " (you)"}
+                        </span>
+                        <span className="font-mono text-sm text-slate-400">{entry.score.toLocaleString()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* My score footer */}
+                <div className="px-5 py-4 flex items-center justify-between">
+                  <span className="text-slate-400 text-sm">Your score</span>
+                  <span className="text-2xl font-black text-white">{totalScore.toLocaleString()} <span className="text-sm text-slate-400">pts</span></span>
+                </div>
+              </div>
+            ) : (
+              <div className="glass-card rounded-2xl p-8 text-center">
+                <div className="text-5xl font-black text-arena-gold mb-1">{totalScore.toLocaleString()}</div>
+                <p className="text-slate-400 text-sm">pts</p>
+              </div>
+            )}
           </motion.div>
         )}
       </div>

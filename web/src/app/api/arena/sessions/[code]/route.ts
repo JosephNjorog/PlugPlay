@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db, arenaSessions, arenaPlayers } from "@/lib/db";
 import { pusherServer, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
@@ -19,9 +19,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ cod
     .select()
     .from(arenaPlayers)
     .where(eq(arenaPlayers.sessionId, session.id))
-    .orderBy(arenaPlayers.score);
+    .orderBy(desc(arenaPlayers.score));
 
-  return NextResponse.json({ ...session, players });
+  const ranked = players.map((p, i) => ({ ...p, rank: i + 1 }));
+  return NextResponse.json({ ...session, players: ranked });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
@@ -44,8 +45,23 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     .set({ status: "ended", endedAt: new Date() })
     .where(eq(arenaSessions.id, session.id));
 
+  const players = await db
+    .select()
+    .from(arenaPlayers)
+    .where(eq(arenaPlayers.sessionId, session.id))
+    .orderBy(desc(arenaPlayers.score));
+
+  const leaderboard = players.map((p, i) => ({
+    id: p.id,
+    nickname: p.nickname,
+    score: p.score,
+    correctAnswers: p.correctAnswers,
+    rank: i + 1,
+  }));
+
   await pusherServer.trigger(arenaChannel(code), ARENA_EVENTS.SESSION_ENDED, {
     message: "Session ended by host",
+    leaderboard,
   });
 
   return NextResponse.json({ success: true });
