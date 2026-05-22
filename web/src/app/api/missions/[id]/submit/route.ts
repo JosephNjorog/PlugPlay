@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const [game] = await db.select().from(games).where(eq(games.id, gameId)).limit(1);
   if (!game) return NextResponse.json({ error: "Game not found" }, { status: 404 });
 
-  // Get attempt count
+  // Get attempt count — block replay if already completed
   const [{ value: attemptCount }] = await db
     .select({ value: count() })
     .from(missionAttempts)
@@ -36,6 +36,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         eq(missionAttempts.gameId, gameId)
       )
     );
+
+  if (Number(attemptCount) > 0) {
+    return NextResponse.json(
+      { error: "Already completed", alreadyPlayed: true },
+      { status: 409 }
+    );
+  }
 
   // Server-side scoring
   const scoreResult = predictScore({

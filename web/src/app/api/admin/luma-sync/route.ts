@@ -96,10 +96,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Update event with lumaEventId if provided
-  if (lumaEventId) {
-    await db.update(events).set({ lumaEventId }).where(eq(events.id, eventId));
-  }
-
   return NextResponse.json({ matched, preRegistered, total: attendees.length });
 }

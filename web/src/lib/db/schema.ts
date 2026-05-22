@@ -95,7 +95,6 @@ export const events = pgTable("events", {
   coverEmoji: text("cover_emoji").default("🎮").notNull(),
   agenda: jsonb("agenda").default([]).notNull(),
   isPlatformEvent: boolean("is_platform_event").default(false).notNull(),
-  lumaEventId: text("luma_event_id"),
   requiresApproval: boolean("requires_approval").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

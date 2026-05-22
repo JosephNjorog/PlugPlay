@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, getTableColumns } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db, arenaSessions, arenaPlayers, profiles } from "@/lib/db";
 import { generateArenaCode } from "@/lib/utils";
@@ -12,7 +12,7 @@ export async function GET() {
 
   const sessions = await db
     .select({
-      ...arenaSessions,
+      ...getTableColumns(arenaSessions),
       hostUsername: profiles.username,
       playerCount: sql<number>`(SELECT COUNT(*) FROM arena_players WHERE session_id = ${arenaSessions.id})`,
     })

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { desc, like, eq, and } from "drizzle-orm";
+import { desc, like, eq, and, getTableColumns } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db, events, eventParticipants } from "@/lib/db";
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     const query = db
       .select({
-        ...events,
+        ...getTableColumns(events),
         participantCount: sql<number>`(SELECT COUNT(*) FROM event_participants WHERE event_id = ${events.id})`,
       })
       .from(events)
