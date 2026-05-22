@@ -128,7 +128,7 @@ export async function POST() {
     results.arenaQuestions++;
   }
 
-  // ── 3. Seed the Global Bitcoin Pizza Party event (idempotent) ─────────────────
+  // ── 3. Seed / keep the Global Bitcoin Pizza Party event live ─────────────────
   const existingEvent = await db.execute(sql`
     SELECT id FROM events WHERE title = 'Global Bitcoin Pizza Party | Nairobi Edition' LIMIT 1
   `);
@@ -147,7 +147,7 @@ export async function POST() {
         'irl',
         'Nairobi Street Kitchen, 1870 Mpaka Rd, Nairobi, Kenya',
         '2026-05-22 17:00:00+03'::timestamptz,
-        '2026-05-22 19:00:00+03'::timestamptz,
+        '2026-05-23 22:00:00+03'::timestamptz,
         'live',
         'community',
         'Beginner',
@@ -161,8 +161,17 @@ export async function POST() {
         false
       )
     `);
-    results.events++;
+  } else {
+    // Keep it live with extended end time
+    await db.execute(sql`
+      UPDATE events
+      SET status     = 'live',
+          ends_at    = '2026-05-23 22:00:00+03'::timestamptz,
+          updated_at = NOW()
+      WHERE title = 'Global Bitcoin Pizza Party | Nairobi Edition'
+    `);
   }
+  results.events++;
 
   return NextResponse.json({
     success: true,

@@ -112,7 +112,7 @@ export default function AdminArenaPage() {
   });
 
   const filtered = sessions.filter((s: any) =>
-    !search || s.code.includes(search.toUpperCase()) || s.topic.includes(search.toLowerCase())
+    !search || s.code.includes(search.toUpperCase()) || (s.topic ?? "").includes(search.toLowerCase())
   );
 
   return (
@@ -176,7 +176,7 @@ export default function AdminArenaPage() {
                     <td className="px-4 py-3">
                       <span className="text-white font-mono font-bold text-lg tracking-widest">{session.code}</span>
                     </td>
-                    <td className="px-4 py-3 text-slate-300 capitalize text-xs">{session.topic.replace("_", " ")}</td>
+                    <td className="px-4 py-3 text-slate-300 capitalize text-xs">{(session.topic ?? "").replace(/_/g, " ")}</td>
                     <td className="px-4 py-3">
                       <span className={cn("text-xs border px-2 py-0.5 rounded-full capitalize", statusColors[session.status])}>{session.status}</span>
                     </td>
@@ -222,7 +222,7 @@ export default function AdminArenaPage() {
 
               <div className="space-y-3 text-sm mb-5">
                 <div className="flex justify-between text-slate-400">
-                  <span>Topic</span><span className="text-white capitalize">{selectedSession.topic.replace("_", " ")}</span>
+                  <span>Topic</span><span className="text-white capitalize">{(selectedSession.topic ?? "").replace(/_/g, " ")}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>Players</span><span className="text-white">{selectedSession.playerCount || 0} / {selectedSession.maxPlayers}</span>

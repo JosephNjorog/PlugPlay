@@ -285,14 +285,13 @@ export default function EventsPage() {
   const [formatFilter, setFormatFilter] = useState("All");
   const [joiningId, setJoiningId] = useState<string | null>(null);
 
-  const { data: events, isLoading } = useQuery<ArenaEvent[]>({
+  const { data: events, isLoading, isError } = useQuery<ArenaEvent[]>({
     queryKey: ["events", "list"],
     queryFn: async () => {
       const res = await fetch("/api/events");
       if (!res.ok) throw new Error("Failed to load events");
       return res.json();
     },
-    enabled: !!session?.user,
     staleTime: 30_000,
     refetchInterval: 30_000,
   });
@@ -452,6 +451,14 @@ export default function EventsPage() {
                 {[...Array(4)].map((_, i) => (
                   <Skeleton key={i} className="h-72" />
                 ))}
+              </div>
+            ) : isError ? (
+              <div className="col-span-full flex flex-col items-center gap-4 py-16 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-3xl">⚠️</div>
+                <div>
+                  <p className="text-white font-semibold text-base">Failed to load events</p>
+                  <p className="text-slate-500 text-sm mt-1">Please refresh the page or try again later.</p>
+                </div>
               </div>
             ) : filteredEvents.length === 0 ? (
               <div className="grid grid-cols-1">
