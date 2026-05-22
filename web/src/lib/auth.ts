@@ -7,6 +7,10 @@ import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { authConfig } from "./auth.config";
 
+// Hardcode production URL so NextAuth always builds the correct OAuth callback,
+// regardless of what NEXTAUTH_URL is set to in Vercel environment variables.
+process.env.AUTH_URL = "https://plugplayavax.vercel.app";
+
 const signInSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
