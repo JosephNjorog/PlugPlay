@@ -53,9 +53,7 @@ export async function POST(req: NextRequest) {
         VALUES (${user.profile_id}, ${token}, ${expiresAt.toISOString()})
       `);
 
-      const baseUrl =
-        process.env.NEXTAUTH_URL ??
-        "https://plugplayavax.vercel.app";
+      const baseUrl = process.env.APP_URL ?? "https://plugplayavax.vercel.app";
       const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
       try {
