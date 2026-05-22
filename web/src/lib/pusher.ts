@@ -33,5 +33,6 @@ export const ARENA_EVENTS = {
   ANSWER_SUBMITTED: "answer-submitted",
   LEADERBOARD_UPDATE: "leaderboard-update",
   SESSION_ENDED: "session-ended",
+  SESSION_RESTARTED: "session-restarted",
   SCORE_UPDATE: "score-update",
 } as const;

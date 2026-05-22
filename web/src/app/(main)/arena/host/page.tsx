@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import { Play, Square, Users, Zap, ChevronRight, Crown, RefreshCw } from "lucide-react";
+import { Play, Square, Users, Zap, ChevronRight, Crown, RefreshCw, RotateCcw } from "lucide-react";
 import { getPusherClient, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
 
 interface Player { id: string; nickname: string; score: number; correctAnswers: number; }
@@ -34,6 +34,7 @@ export default function ArenaHostPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
 
   const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/arena/join` : "";
 
@@ -119,6 +120,23 @@ export default function ArenaHostPage() {
     await fetch(`/api/arena/sessions/${sessionCode}`, { method: "DELETE" });
     setStep("ended");
     toast.success("Session ended");
+  };
+
+  const restartSession = async () => {
+    setIsRestarting(true);
+    try {
+      const res = await fetch(`/api/arena/sessions/${sessionCode}`, { method: "PATCH" });
+      if (!res.ok) throw new Error();
+      setPlayers((prev) => prev.map((p) => ({ ...p, score: 0, correctAnswers: 0 })));
+      setRoundIndex(0);
+      setTotalQuestions(0);
+      setStep("waiting");
+      toast.success("Session restarted — scores reset, waiting for host to start again");
+    } catch {
+      toast.error("Failed to restart session");
+    } finally {
+      setIsRestarting(false);
+    }
   };
 
   return (
@@ -275,6 +293,14 @@ export default function ArenaHostPage() {
                     </>
                   )}
                   <button
+                    onClick={restartSession}
+                    disabled={isRestarting}
+                    className="w-full flex items-center justify-center gap-2 border border-arena-cyan/30 text-arena-cyan py-3 rounded-xl hover:bg-arena-cyan/10 transition-all disabled:opacity-50"
+                  >
+                    {isRestarting ? <div className="w-4 h-4 border-2 border-arena-cyan/30 border-t-arena-cyan rounded-full animate-spin" /> : <RotateCcw size={16} />}
+                    Restart Session
+                  </button>
+                  <button
                     onClick={endSession}
                     className="w-full flex items-center justify-center gap-2 border border-red-500/30 text-red-400 py-3 rounded-xl hover:bg-red-500/10 transition-all"
                   >
@@ -298,10 +324,20 @@ export default function ArenaHostPage() {
                   <span className="text-arena-gold font-mono">{p.score.toLocaleString()} pts</span>
                 </div>
               ))}
-              <button onClick={() => setStep("setup")} className="mt-8 btn-primary flex items-center gap-2 mx-auto">
-                <RefreshCw size={16} />
-                New Session
-              </button>
+              <div className="mt-8 flex gap-3 justify-center">
+                <button
+                  onClick={restartSession}
+                  disabled={isRestarting}
+                  className="flex items-center gap-2 px-5 py-3 border border-arena-cyan/30 text-arena-cyan rounded-xl hover:bg-arena-cyan/10 transition-all font-bold disabled:opacity-50"
+                >
+                  {isRestarting ? <div className="w-4 h-4 border-2 border-arena-cyan/30 border-t-arena-cyan rounded-full animate-spin" /> : <RotateCcw size={16} />}
+                  Restart Same Session
+                </button>
+                <button onClick={() => setStep("setup")} className="btn-primary flex items-center gap-2">
+                  <RefreshCw size={16} />
+                  New Session
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

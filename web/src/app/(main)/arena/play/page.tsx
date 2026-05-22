@@ -112,6 +112,18 @@ function ArenaPlayContent() {
       }
     });
 
+    ch.bind(ARENA_EVENTS.SESSION_RESTARTED, () => {
+      setGameStatus("waiting");
+      setQuestion(null);
+      setSelectedAnswer(null);
+      setAnswerResult(null);
+      setTotalScore(0);
+      setRoundIndex(0);
+      setFinalLeaderboard([]);
+      setPlayerCount(0);
+      toast.info("Session restarted — waiting for host to start again");
+    });
+
     return () => pusher.unsubscribe(arenaChannel(code));
   }, [code]);
 
