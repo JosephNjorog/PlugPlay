@@ -187,7 +187,7 @@ export default function AdminArenaPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-400 text-xs">{session.roundIndex + 1}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">{format(new Date(session.createdAt), "MMM d, HH:mm")}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">{session.createdAt ? format(new Date(session.createdAt), "MMM d, HH:mm") : "—"}</td>
                     <td className="px-4 py-3">
                       {session.status !== "ended" && (
                         <button
@@ -231,7 +231,7 @@ export default function AdminArenaPage() {
                   <span>Round</span><span className="text-white">{selectedSession.roundIndex + 1}</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>Created</span><span className="text-white">{format(new Date(selectedSession.createdAt), "PPP p")}</span>
+                  <span>Created</span><span className="text-white">{selectedSession.createdAt ? format(new Date(selectedSession.createdAt), "PPP p") : "—"}</span>
                 </div>
               </div>
 

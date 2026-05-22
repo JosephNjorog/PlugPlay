@@ -15,25 +15,30 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get("search");
   const status = searchParams.get("status");
 
-  const conditions: any[] = [];
-  if (search) conditions.push(like(events.title, `%${search}%`));
-  if (status && status !== "all") conditions.push(eq(events.status, status));
+  try {
+    const conditions: any[] = [];
+    if (search) conditions.push(like(events.title, `%${search}%`));
+    if (status && status !== "all") conditions.push(eq(events.status, status));
 
-  const results = await db
-    .select({
-      event: events,
-      participantCount: sql<number>`(SELECT COUNT(*) FROM event_participants WHERE event_id = ${events.id})`,
-    })
-    .from(events)
-    .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(events.createdAt));
+    const query = db
+      .select({
+        ...events,
+        participantCount: sql<number>`(SELECT COUNT(*) FROM event_participants WHERE event_id = ${events.id})`,
+      })
+      .from(events)
+      .orderBy(desc(events.createdAt));
 
-  return NextResponse.json(
-    results.map((r) => ({
-      ...r.event,
-      participantCount: Number(r.participantCount),
-    }))
-  );
+    const results = conditions.length
+      ? await query.where(conditions.length === 1 ? conditions[0] : and(...conditions))
+      : await query;
+
+    return NextResponse.json(
+      results.map((r) => ({ ...r, participantCount: Number(r.participantCount) }))
+    );
+  } catch (err) {
+    console.error("admin/events GET error:", err);
+    return NextResponse.json({ error: "Failed to fetch events", detail: String(err) }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

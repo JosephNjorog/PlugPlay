@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, and, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db, missionAttempts, profiles, games } from "@/lib/db";
-import { verifyOnChainTx } from "@/lib/blockchain";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -58,6 +57,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (action === "verify-onchain" && txHash) {
+    const { verifyOnChainTx } = await import("@/lib/blockchain");
     const result = await verifyOnChainTx({ txHash });
     const [updated] = await db
       .update(missionAttempts)

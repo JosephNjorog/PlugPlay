@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db, arenaSessions, arenaPlayers, profiles } from "@/lib/db";
 import { generateArenaCode } from "@/lib/utils";
@@ -12,17 +12,16 @@ export async function GET() {
 
   const sessions = await db
     .select({
-      session: arenaSessions,
+      ...arenaSessions,
       hostUsername: profiles.username,
-      playerCount: db
-        .$count(arenaPlayers, eq(arenaPlayers.sessionId, arenaSessions.id)),
+      playerCount: sql<number>`(SELECT COUNT(*) FROM arena_players WHERE session_id = ${arenaSessions.id})`,
     })
     .from(arenaSessions)
     .leftJoin(profiles, eq(arenaSessions.hostId, profiles.id))
     .orderBy(desc(arenaSessions.createdAt))
     .limit(50);
 
-  return NextResponse.json(sessions);
+  return NextResponse.json(sessions.map((s) => ({ ...s, playerCount: Number(s.playerCount) })));
 }
 
 export async function POST(req: NextRequest) {
