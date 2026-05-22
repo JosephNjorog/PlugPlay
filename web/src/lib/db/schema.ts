@@ -221,11 +221,11 @@ export const arenaQuestions = pgTable("arena_questions", {
   id: uuid("id").primaryKey().defaultRandom(),
   topic: text("topic").notNull(),
   question: text("question").notNull(),
-  options: text("options").array().notNull(), // [A, B, C, D]
-  answer: integer("answer").notNull(), // zero-indexed correct option
+  options: text("options").array().notNull(), // [A, B, C, D] — zero-indexed
+  answer: integer("answer").notNull(),        // zero-indexed correct option
   explanation: text("explanation"),
-  difficulty: text("difficulty").default("medium").notNull(), // easy | medium | hard
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  difficulty: text("difficulty").default("medium").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // ─── Arena Answers ───────────────────────────────────────────────────────────

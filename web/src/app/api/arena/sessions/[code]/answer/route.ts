@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db, arenaSessions, arenaPlayers, arenaQuestions, arenaAnswers } from "@/lib/db";
 import { pusherServer, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
 
 const answerSchema = z.object({
   playerId: z.string().uuid(),
   questionId: z.string().uuid(),
-  answer: z.number().min(0).max(3),
+  answer: z.number().min(-1).max(3),
   responseTimeMs: z.number(),
 });
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  const body = answerSchema.parse(await req.json());
+
+  let body: z.infer<typeof answerSchema>;
+  try {
+    body = answerSchema.parse(await req.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
   const [session] = await db
     .select()
@@ -40,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
     : 0;
   const pointsEarned = isCorrect ? 1000 + speedBonus : 0;
 
-  // Record answer
+  // Record the answer
   await db.insert(arenaAnswers).values({
     sessionId: session.id,
     playerId: body.playerId,
@@ -49,27 +55,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
     isCorrect,
     responseTimeMs: body.responseTimeMs,
     pointsEarned,
-  });
+  }).onConflictDoNothing();
 
   // Update player score
   if (isCorrect) {
-    await db
-      .update(arenaPlayers)
-      .set({
-        score: db.$count(arenaAnswers, and(eq(arenaAnswers.playerId, body.playerId), eq(arenaAnswers.isCorrect, true))),
-        correctAnswers: db.$count(arenaAnswers, and(eq(arenaAnswers.playerId, body.playerId), eq(arenaAnswers.isCorrect, true))),
-      })
-      .where(eq(arenaPlayers.id, body.playerId));
+    const [player] = await db
+      .select()
+      .from(arenaPlayers)
+      .where(eq(arenaPlayers.id, body.playerId))
+      .limit(1);
 
-    // Simpler update
-    const [player] = await db.select().from(arenaPlayers).where(eq(arenaPlayers.id, body.playerId)).limit(1);
-    await db
-      .update(arenaPlayers)
-      .set({
-        score: (player.score || 0) + pointsEarned,
-        correctAnswers: (player.correctAnswers || 0) + 1,
-      })
-      .where(eq(arenaPlayers.id, body.playerId));
+    if (player) {
+      await db
+        .update(arenaPlayers)
+        .set({
+          score: (player.score || 0) + pointsEarned,
+          correctAnswers: (player.correctAnswers || 0) + 1,
+        })
+        .where(eq(arenaPlayers.id, body.playerId));
+    }
   }
 
   // Broadcast updated leaderboard
