@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, X, Swords, Users, Zap, Brain, Play, ChevronRight } from "lucide-react";
+import { Plus, Search, X, Swords, Users, Zap, Brain, Play, ChevronRight, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -65,6 +65,16 @@ export default function AdminArenaPage() {
       setSelectedSession(null);
     },
     onError: () => toast.error("Failed to end session"),
+  });
+
+  const restartSession = useMutation({
+    mutationFn: (code: string) => fetch(`/api/arena/sessions/${code}`, { method: "PATCH" }).then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-arena-sessions"] });
+      toast.success("Session restarted — scores cleared");
+      setSelectedSession((s: any) => s ? { ...s, status: "waiting", roundIndex: 0 } : s);
+    },
+    onError: () => toast.error("Failed to restart session"),
   });
 
   const startSession = useMutation({
@@ -189,14 +199,23 @@ export default function AdminArenaPage() {
                     <td className="px-4 py-3 text-slate-400 text-xs">{session.roundIndex + 1}</td>
                     <td className="px-4 py-3 text-slate-500 text-xs">{session.createdAt ? format(new Date(session.createdAt), "MMM d, HH:mm") : "—"}</td>
                     <td className="px-4 py-3">
-                      {session.status !== "ended" && (
+                      <div className="flex gap-1.5">
                         <button
-                          onClick={(e) => { e.stopPropagation(); endSession.mutate(session.code); }}
-                          className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 px-2.5 py-1 rounded-lg hover:bg-red-400/20 transition-all"
+                          onClick={(e) => { e.stopPropagation(); restartSession.mutate(session.code); }}
+                          className="text-xs text-arena-cyan bg-arena-cyan/10 border border-arena-cyan/20 px-2.5 py-1 rounded-lg hover:bg-arena-cyan/20 transition-all"
+                          title="Restart session"
                         >
-                          End
+                          <RotateCcw size={11} />
                         </button>
-                      )}
+                        {session.status !== "ended" && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); endSession.mutate(session.code); }}
+                            className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 px-2.5 py-1 rounded-lg hover:bg-red-400/20 transition-all"
+                          >
+                            End
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -255,6 +274,14 @@ export default function AdminArenaPage() {
                   {nextQuestion.isPending ? "Pushing…" : "Next Question"}
                 </button>
               )}
+              <button
+                onClick={() => restartSession.mutate(selectedSession.code)}
+                disabled={restartSession.isPending}
+                className="w-full flex items-center justify-center gap-2 border border-arena-cyan/30 text-arena-cyan hover:bg-arena-cyan/10 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 mb-2"
+              >
+                {restartSession.isPending ? <div className="w-4 h-4 border-2 border-arena-cyan/30 border-t-arena-cyan rounded-full animate-spin" /> : <RotateCcw size={14} />}
+                {restartSession.isPending ? "Restarting…" : "Restart Session"}
+              </button>
               {selectedSession.status !== "ended" && (
                 <button
                   onClick={() => endSession.mutate(selectedSession.code)}
