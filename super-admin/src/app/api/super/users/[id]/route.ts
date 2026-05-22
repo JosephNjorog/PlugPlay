@@ -8,14 +8,23 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!(session?.user as any)?.isSuperAdmin) {
-    return NextResponse.json({ error: "Super admin required" }, { status: 403 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id: profileId } = await params;
 
+  // Verify super-admin from DB (session token may not carry isSuperAdmin on all requests)
+  const callerRows = await db.execute(sql`
+    SELECT is_super_admin FROM profiles WHERE id = ${(session.user as any).id} LIMIT 1
+  `);
+  const caller = ((callerRows as any).rows ?? callerRows)[0];
+  if (!caller?.is_super_admin) {
+    return NextResponse.json({ error: "Super admin required" }, { status: 403 });
+  }
+
   // Prevent self-deletion
-  if ((session?.user as any)?.id === profileId) {
+  if ((session.user as any).id === profileId) {
     return NextResponse.json({ error: "Cannot delete your own account" }, { status: 400 });
   }
 
