@@ -19,6 +19,9 @@ async function ensureTokensTable() {
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+  // Add missing columns to pre-existing tables
+  await db.execute(sql`ALTER TABLE password_reset_tokens ADD COLUMN IF NOT EXISTS used BOOLEAN NOT NULL DEFAULT FALSE`);
+  await db.execute(sql`ALTER TABLE password_reset_tokens ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
 }
 
 export async function POST(req: NextRequest) {
