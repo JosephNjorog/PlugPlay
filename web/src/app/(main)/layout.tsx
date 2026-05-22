@@ -14,8 +14,9 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
   const isRoot = pathname === "/" || pathname === "";
 
-  // Landing page is public — serve it without auth checks or layout chrome
-  if (isRoot) return <>{children}</>;
+  // Landing page and arena join/play are public — no auth required
+  const isPublic = isRoot || pathname.startsWith("/arena/join") || pathname.startsWith("/arena/play");
+  if (isPublic) return <>{children}</>;
 
   if (!session?.user) redirect("/sign-in");
 

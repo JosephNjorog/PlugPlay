@@ -5,7 +5,8 @@ import { NextResponse } from "next/server";
 const { auth } = NextAuth(authConfig);
 
 const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up", "/forgot-password", "/reset-password"];
-const AUTH_REQUIRED_PREFIXES = ["/journey", "/library", "/events", "/leaderboard", "/rewards", "/profile", "/play", "/challenge", "/arena", "/onboarding"];
+// /arena/join and /arena/play are intentionally public — guests at live events don't need an account to play
+const AUTH_REQUIRED_PREFIXES = ["/journey", "/library", "/events", "/leaderboard", "/rewards", "/profile", "/play", "/challenge", "/arena/host", "/onboarding"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
