@@ -20,7 +20,7 @@ interface ProfileData {
 const NAV = [
   { href: "/journey",     label: "Journey",     icon: Map,              desc: "Your learning path" },
   { href: "/library",     label: "Library",      icon: BookOpen,         desc: "All 38 games" },
-  { href: "/arena/join",  label: "Arena",        icon: Swords,           desc: "Live multiplayer" },
+  { href: "/arena",       label: "Arena",        icon: Swords,           desc: "Live multiplayer" },
   { href: "/events",      label: "Events",       icon: Calendar,         desc: "IRL & virtual" },
   { href: "/leaderboard", label: "Leaderboard",  icon: Trophy,           desc: "Top players" },
   { href: "/rewards",     label: "Rewards",      icon: Gift,             desc: "NFT badges" },
