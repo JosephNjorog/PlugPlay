@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Crown, Users, Search, ShieldCheck, Shield, ShieldOff, Loader2 } from "lucide-react";
+import { Crown, Users, Search, ShieldCheck, Shield, ShieldOff, Loader2, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ export default function RolesPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"" | Role>("");
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; username: string } | null>(null);
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["super-users", search, roleFilter],
@@ -21,6 +22,18 @@ export default function RolesPage() {
       if (roleFilter) p.set("role", roleFilter);
       return fetch(`/api/super/roles?${p}`).then((r) => r.json());
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (userId: string) =>
+      fetch(`/api/super/users/${userId}`, { method: "DELETE" })
+        .then((r) => { if (!r.ok) throw new Error(); return r.json(); }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["super-users"] });
+      setConfirmDelete(null);
+      toast.success("User and all their data have been deleted");
+    },
+    onError: () => toast.error("Failed to delete user"),
   });
 
   const promoteMutation = useMutation({
@@ -143,7 +156,7 @@ export default function RolesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         {!user.isSuperAdmin && !user.isAdmin && (
                           <button
                             onClick={() => promoteMutation.mutate({ userId: user.id, role: "admin" })}
@@ -181,6 +194,14 @@ export default function RolesPage() {
                             <ShieldOff size={10} /> Revoke Super
                           </button>
                         )}
+                        {!user.isSuperAdmin && (
+                          <button
+                            onClick={() => setConfirmDelete({ id: user.id, username: user.username })}
+                            className="text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-lg hover:bg-rose-500/20 transition-all flex items-center gap-1 ml-auto"
+                          >
+                            <Trash2 size={10} /> Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -191,6 +212,42 @@ export default function RolesPage() {
           <div className="text-center py-12 text-slate-500">No users found</div>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="glass rounded-2xl border border-rose-500/20 p-6 max-w-sm w-full shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center">
+                <AlertTriangle size={18} className="text-rose-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold">Delete User</h3>
+                <p className="text-slate-400 text-xs">This cannot be undone</p>
+              </div>
+            </div>
+            <p className="text-slate-300 text-sm mb-6">
+              Permanently delete <span className="text-white font-semibold">{confirmDelete.username}</span> and all their data — missions, NFTs, scores, and account? This action is irreversible.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:bg-white/[0.05] text-sm transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(confirmDelete.id)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deleteMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Delete Forever
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
