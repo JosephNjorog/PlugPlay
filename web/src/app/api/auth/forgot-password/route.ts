@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
       const baseUrl =
         process.env.NEXTAUTH_URL ??
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+        "https://plugplayavax.vercel.app";
       const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
       try {
