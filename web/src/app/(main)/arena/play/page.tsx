@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Zap, Trophy, CheckCircle, XCircle, Clock, Users } from "lucide-react";
+import { Zap, Trophy, CheckCircle, XCircle, Clock, Users, ExternalLink } from "lucide-react";
 import { getPusherClient, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
 
 interface Question {
@@ -32,6 +32,7 @@ interface AnswerResult {
 
 function ArenaPlayContent() {
   const params = useSearchParams();
+  const router = useRouter();
   const code = params.get("code") || "";
   const playerId = params.get("playerId") || "";
 
@@ -313,6 +314,14 @@ function ArenaPlayContent() {
                 <p className="text-slate-400 text-sm">pts</p>
               </div>
             )}
+
+            {/* View full results link */}
+            <button
+              onClick={() => router.push(`/arena/results/${code}?playerId=${playerId}`)}
+              className="mt-4 w-full flex items-center justify-center gap-2 border border-arena-gold/30 text-arena-gold py-3 rounded-xl hover:bg-arena-gold/10 transition-all font-bold text-sm"
+            >
+              <ExternalLink size={15} /> View Full Leaderboard
+            </button>
           </motion.div>
         )}
       </div>

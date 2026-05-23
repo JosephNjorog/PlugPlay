@@ -14,8 +14,8 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
   const isRoot = pathname === "/" || pathname === "";
 
-  // Landing page and arena join/play are public — no auth required
-  const isPublic = isRoot || pathname.startsWith("/arena/join") || pathname.startsWith("/arena/play");
+  // Landing page and arena join/play/results are public — no auth required
+  const isPublic = isRoot || pathname.startsWith("/arena/join") || pathname.startsWith("/arena/play") || pathname.startsWith("/arena/results");
   if (isPublic) return <>{children}</>;
 
   if (!session?.user) redirect("/sign-in");
