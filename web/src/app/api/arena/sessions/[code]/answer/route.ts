@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { db, arenaSessions, arenaPlayers, arenaQuestions, arenaAnswers } from "@/lib/db";
 import { pusherServer, arenaChannel, ARENA_EVENTS } from "@/lib/pusher";
 
@@ -46,8 +46,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
     : 0;
   const pointsEarned = isCorrect ? 1000 + speedBonus : 0;
 
-  // Record the answer
-  await db.insert(arenaAnswers).values({
+  // Record the answer — unique constraint on (session_id, player_id, question_id)
+  // prevents duplicates; onConflictDoNothing silently drops late re-submissions
+  const [inserted] = await db.insert(arenaAnswers).values({
     sessionId: session.id,
     playerId: body.playerId,
     questionId: body.questionId,
@@ -55,25 +56,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cod
     isCorrect,
     responseTimeMs: body.responseTimeMs,
     pointsEarned,
-  }).onConflictDoNothing();
+  }).onConflictDoNothing().returning({ id: arenaAnswers.id });
 
-  // Update player score
-  if (isCorrect) {
-    const [player] = await db
-      .select()
-      .from(arenaPlayers)
-      .where(eq(arenaPlayers.id, body.playerId))
-      .limit(1);
-
-    if (player) {
-      await db
-        .update(arenaPlayers)
-        .set({
-          score: (player.score || 0) + pointsEarned,
-          correctAnswers: (player.correctAnswers || 0) + 1,
-        })
-        .where(eq(arenaPlayers.id, body.playerId));
-    }
+  // Only update score if this is the first (non-duplicate) answer
+  if (inserted && isCorrect) {
+    // Atomic increment — safe under concurrent load, no SELECT needed
+    await db
+      .update(arenaPlayers)
+      .set({
+        score: sql`score + ${pointsEarned}`,
+        correctAnswers: sql`correct_answers + 1`,
+      })
+      .where(eq(arenaPlayers.id, body.playerId));
   }
 
   // Broadcast updated leaderboard
